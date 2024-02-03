@@ -29,8 +29,10 @@ export class AppController {
       };
     }
 
-    // console.log(filterData);
+    console.log(filterData);
+
     // console.log('hah');
-    console.log(data.ticker);
+    // console.log(data.ticker);
+    console.log(data);
   }
 }

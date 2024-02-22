@@ -17,22 +17,19 @@ export class AppController {
   getData(@Body() data) {
     const currentTime = moment(new Date()).format('YYYY-MM-DD HH:mm:ss');
     console.log(currentTime);
-    const close = data.close?.split(',');
-    const volumn = data.volumn?.split(',');
-    const date = data.date?.split(',');
-    const filterData = [];
-    for (const i in close) {
-      filterData[i] = {
-        close: close[i],
-        volumn: volumn[i],
-        date: date[i],
-      };
+    const newData = data.data;
+    const lines = newData.split('\r\n');
+    const headers = lines[0].split(',');
+    const result = [];
+    for (let i = 1; i < lines.length - 1; i++) {
+      const values = lines[i].split(',');
+      const obj = {};
+      for (let j = 0; j < headers.length; j++) {
+        obj[headers[j]] = values[j];
+      }
+      result.push(obj);
     }
 
-    console.log(filterData);
-
-    // console.log('hah');
-    // console.log(data.ticker);
-    console.log(data);
+    console.log(result);
   }
 }

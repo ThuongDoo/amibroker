@@ -1,46 +1,26 @@
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/sequelize';
-import { User } from 'src/user/user.model';
+import { Injectable, NotAcceptableException } from '@nestjs/common';
+import { UserService } from 'src/user/user.service';
 import * as bcrypt from 'bcryptjs';
-import { CreateUserDto } from './dto/createUser.dto';
-import { UserRequest } from 'src/user/userRequest.model';
-import { UserRequestDto } from './dto/userRequest.dto';
 
 @Injectable()
 export class AuthService {
-  constructor(
-    @InjectModel(User) private userModel: typeof User,
-    @InjectModel(UserRequest) private userRequestModel: typeof UserRequest,
-  ) {}
+  constructor(private readonly userService: UserService) {}
 
-  async createUser(createUserDto: CreateUserDto) {
-    const salt = await bcrypt.genSalt(10);
-    const password = await bcrypt.hash('123456', salt);
-    try {
-      const user = await this.userModel.create({
-        phone: createUserDto.phone,
-        email: createUserDto.email,
-        name: createUserDto.name,
-        role: createUserDto.role,
-        password: password,
-      });
-      return user;
-    } catch (error) {
-      throw error;
+  async validateUser(phone: string, password: string): Promise<any> {
+    const user = await this.userService.getUser(phone);
+    const passwordValid = await bcrypt.compare(password, user.password);
+    if (!user) {
+      throw new NotAcceptableException('could not find the user');
     }
-  }
 
-  async signup(userRequestDto: UserRequestDto) {
-    try {
-      const userRequest = await this.userRequestModel.create({
-        phone: userRequestDto.phone,
-        email: userRequestDto.email,
-        name: userRequestDto.name,
-        content: userRequestDto.content,
-      });
-      return userRequest;
-    } catch (error) {
-      throw error;
+    if (user && passwordValid) {
+      return {
+        phone: user.phone,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      };
     }
+    return null;
   }
 }

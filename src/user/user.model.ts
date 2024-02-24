@@ -32,4 +32,7 @@ export class User extends Model {
     defaultValue: UserRole.STOCK1,
   })
   role: UserRole;
+
+  @Column
+  sessionId: string;
 }

@@ -1,11 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import * as moment from 'moment';
 import { CATEGORIES } from 'src/constants/categories';
-import { GlobalService } from 'src/global/global.service';
 
 @Injectable()
 export class BoardService {
-  constructor(public globalService: GlobalService) {}
+  constructor() {}
   private bangdien;
   private buysell;
   private tempBuySell = [];

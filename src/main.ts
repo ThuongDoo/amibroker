@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.setGlobalPrefix('api/v1');
   app.enableCors({
     origin: '*', // Đổi thành domain của trang web gốc của bạn
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',

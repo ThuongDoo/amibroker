@@ -34,5 +34,5 @@ export class User extends Model {
   role: UserRole;
 
   @Column
-  sessionId: string;
+  deviceInfo: string;
 }

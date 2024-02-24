@@ -21,8 +21,10 @@ export class UserController {
   @UseGuards(LocalAuthGuard)
   @Post('/login')
   login(@Request() req): any {
+    // console.log(req.session);
+
     // return { User: req.user, msg: 'user logged in' };
-    return this.userService.login(req.user);
+    return this.userService.login(req);
   }
 
   @Get('/logout')
@@ -59,6 +61,7 @@ export class UserController {
   @UseGuards(AuthenticatedGuard)
   @Get('/protected')
   getHello(@Request() req): string {
-    return req.user;
+    return 'hohohoho';
+    // return req.user;
   }
 }

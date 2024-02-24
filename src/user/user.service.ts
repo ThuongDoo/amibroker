@@ -76,11 +76,33 @@ export class UserService {
     }
   }
 
-  async login(userData) {
-    console.log('hah');
+  async login(req) {
+    const userData = req.user;
     const user = await this.userModel.findOne({
       where: { phone: userData.phone },
     });
-    console.log(user.sessionId);
+    const deviceInfo = req.headers['user-agent'];
+    console.log(deviceInfo);
+    user.deviceInfo = deviceInfo;
+    await user.save();
+
+    // console.log(req.session);
+  }
+
+  async checkDeviceInfo(req) {
+    const user = await this.userModel.findOne({
+      where: { phone: req.user.phone },
+    });
+
+    const oldDeviceInfo = user.deviceInfo;
+    const currentDeviceInfo = req.headers['user-agent'];
+    console.log(oldDeviceInfo);
+    console.log(currentDeviceInfo);
+
+    if (oldDeviceInfo && oldDeviceInfo === currentDeviceInfo) {
+      return true;
+    } else {
+      return false;
+    }
   }
 }

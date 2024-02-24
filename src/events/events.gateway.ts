@@ -29,4 +29,12 @@ export class EventsGateway
   handleConnection(client: Socket, ...args: any[]) {
     console.log('Connected', client.id);
   }
+
+  async sendStockToAllClients(data: any) {
+    this.server.emit('stock', data);
+  }
+
+  async sendBuysellToAllClients(data: any) {
+    this.server.emit('buysell', data);
+  }
 }

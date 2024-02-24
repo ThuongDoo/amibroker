@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import { EventsGateway } from 'src/events/events.gateway';
 
 @Injectable()
 export class BuysellService {
+  constructor(private readonly eventsGateway: EventsGateway) {}
   buysellData = [];
 
   formatData(csvData) {
@@ -23,5 +25,6 @@ export class BuysellService {
 
   async updateBuysell(data) {
     this.buysellData = this.formatData(data.data);
+    await this.eventsGateway.sendBuysellToAllClients(this.buysellData);
   }
 }

@@ -25,5 +25,8 @@ export class StockService {
 
   async updateStock(data) {
     this.stockData = this.formatData(data.data);
+    // console.log(this.stockData);
+
+    await this.eventsGateway.sendStockToAllClients(this.stockData);
   }
 }

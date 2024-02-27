@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { EventsGateway } from 'src/events/events.gateway';
 
 @Injectable()
 export class StockService {
   constructor(private readonly eventsGateway: EventsGateway) {}
   stockData = [];
+
+  tempData = '';
 
   formatData(csvData) {
     const headers = csvData.split('\r\n')[0].split(',');
@@ -23,10 +25,27 @@ export class StockService {
     return result;
   }
 
-  async updateStock(data) {
-    this.stockData = this.formatData(data.data);
-    // console.log(this.stockData);
+  async getStock() {
+    return this.stockData;
+  }
 
-    await this.eventsGateway.sendStockToAllClients(this.stockData);
+  async getStockByName(stocks: string[]) {
+    return this.stockData.filter((item) => stocks.includes(item.Ticker));
+  }
+
+  async sendData() {
+    this.stockData = this.formatData(this.tempData);
+    this.tempData = '';
+    console.log(this.stockData.length);
+
+    await this.eventsGateway.sendStockUpdateSignal();
+  }
+
+  async updateStock(data) {
+    if (data.data == 'done') {
+      this.sendData();
+    } else {
+      this.tempData += data.data;
+    }
   }
 }

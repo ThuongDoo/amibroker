@@ -7,5 +7,6 @@ import { EventsModule } from 'src/events/events.module';
   imports: [EventsModule],
   providers: [StockService],
   controllers: [StockController],
+  exports: [StockService],
 })
 export class StockModule {}

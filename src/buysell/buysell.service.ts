@@ -23,6 +23,10 @@ export class BuysellService {
     return result;
   }
 
+  getBuySell() {
+    return this.buysellData;
+  }
+
   async updateBuysell(data) {
     this.buysellData = this.formatData(data.data);
     await this.eventsGateway.sendBuysellToAllClients(this.buysellData);

@@ -20,9 +20,11 @@ export class EventsGateway
   ) {}
   @WebSocketServer() server: Server;
   @SubscribeMessage('updateStockRequest')
-  handleUpdateStock(client: Socket, payload: any) {
+  async handleUpdateStock(client: Socket, payload: any) {
     console.log('Received updateStockRequest from client:', payload);
-    const data = this.stockService.getStockByName(payload);
+    const data = await this.stockService.getStockByName(payload);
+    console.log('Data send to client: ', data.length);
+
     this.server.emit('updateStock', data);
   }
 
@@ -36,15 +38,17 @@ export class EventsGateway
     console.log('Connected', client.id);
   }
 
-  async sendStockToAllClients(data: any) {
-    const realtimeData = this.stockService.getBuysellProfitRealtime();
-    this.server.emit('stock', { data: data, realtimeData });
-  }
+  // async sendStockToAllClients(data: any) {
+  //   const realtimeData = this.stockService.getBuysellProfitRealtime();
+  //   this.server.emit('stock', { data: data, realtimeData });
+  // }
   async sendStockUpdateSignal() {
     this.server.emit('stockUpdated', true);
   }
 
   async sendBuysellToAllClients(data: any) {
-    this.server.emit('buysell', data);
+    const realtimeData = await this.stockService.getBuysellProfitRealtime();
+
+    this.server.emit('buysell', { data: data, realtimeData });
   }
 }

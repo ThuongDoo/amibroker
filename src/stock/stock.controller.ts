@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { StockService } from './stock.service';
 
 @Controller('stock')
@@ -10,10 +10,34 @@ export class StockController {
     return this.stockService.updateStock(data);
   }
 
-  @Get(':stocks')
+  @Get('/getStockByName/:stocks')
   getStockByName(@Param('stocks') stocks: string) {
     const stocksArray = stocks.split(',');
 
     return this.stockService.getStockByName(stocksArray);
+  }
+
+  @Get('/getAll')
+  getStocks() {
+    return this.stockService.getStocks();
+  }
+
+  @Post('/buysell')
+  updateBuysell(@Body() data) {
+    return this.stockService.updateBuysell(data);
+  }
+
+  @Get('/buysell')
+  getBuysell(
+    @Query('date') dateFilter: string,
+    @Query('ticker') ticker: string,
+    @Query('limit') limit: string,
+  ) {
+    return this.stockService.getBuysell(dateFilter, ticker, limit);
+  }
+
+  @Post('/buysell/importFile')
+  importBuysell(@Body() data) {
+    return this.stockService.importBuysell(data);
   }
 }

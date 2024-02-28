@@ -15,13 +15,15 @@ import { Inject, forwardRef } from '@nestjs/common';
 export class EventsGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
-  constructor(private stockService: StockService) {}
+  constructor(
+    @Inject(forwardRef(() => StockService)) private stockService: StockService,
+  ) {}
   @WebSocketServer() server: Server;
   @SubscribeMessage('updateStockRequest')
   handleUpdateStock(client: Socket, payload: any) {
     console.log('Received updateStockRequest from client:', payload);
-
-    this.server.emit('updateStock', 'hihi');
+    const data = this.stockService.getStockByName(payload);
+    this.server.emit('updateStock', data);
   }
 
   afterInit(server: Server) {
@@ -35,7 +37,8 @@ export class EventsGateway
   }
 
   async sendStockToAllClients(data: any) {
-    this.server.emit('stock', data);
+    const realtimeData = this.stockService.getBuysellProfitRealtime();
+    this.server.emit('stock', { data: data, realtimeData });
   }
   async sendStockUpdateSignal() {
     this.server.emit('stockUpdated', true);

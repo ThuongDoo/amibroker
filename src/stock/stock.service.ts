@@ -3,7 +3,8 @@ import { InjectModel } from '@nestjs/sequelize';
 import { EventsGateway } from 'src/events/events.gateway';
 import { Buysell } from './buysell.model';
 import { OrderItem, where } from 'sequelize';
-import { format, formatISO, parse } from 'date-fns';
+import { format, formatISO, parse, parseISO, subDays } from 'date-fns';
+import { Op } from 'sequelize';
 
 @Injectable()
 export class StockService {
@@ -23,20 +24,17 @@ export class StockService {
 
   formatData(csvData) {
     const convertToISO = (dateString) => {
-      console.log(dateString);
-
       // Tạo một đối tượng Date từ chuỗi ngày tháng đầu vào
       try {
         // const parsedDate = parse(dateString, 'M/d/yyyy HH:mm:ss', new Date());
         // const isoString = formatISO(parsedDate);
         // console.log(isoString);
         const inputFormat = 'M/d/yyyy HH:mm:ss';
-        const outputFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+        const outputFormat = 'yyyy-MM-dd';
         const parsedDate = parse(dateString, inputFormat, new Date());
 
         // Chuyển đổi đối tượng Date thành chuỗi trong định dạng mong muốn
         const outputDateString = format(parsedDate, outputFormat);
-        console.log(outputDateString);
 
         return outputDateString;
       } catch (error) {
@@ -98,9 +96,14 @@ export class StockService {
 
   async updateBuysell(data) {
     // console.log(data.data);
+    const today = new Date();
+
+    const formattedToday = format(today, 'yyyy-MM-dd');
 
     const newData = this.formatData(data.data)
-      .filter((item) => item.Ticker !== '')
+      .filter(
+        (item) => item.Ticker !== '' && item['Date/Time'] === formattedToday,
+      )
       .map((item) => {
         return {
           ticker: item.Ticker,
@@ -109,16 +112,45 @@ export class StockService {
           status: item['Mua - Ban'],
         };
       });
+
+    const buysells = await this.buysellModel.findAll({
+      where: { date: formattedToday },
+    });
+
+    const filteredData = newData
+      .filter(
+        (itemA) => !buysells.some((itemB) => itemB.ticker === itemA.ticker),
+      )
+      .map((item) => {
+        return { ...item, status: item.status == 1 ? 2 : 0 };
+      });
+
+    const createdData = await this.buysellModel.bulkCreate(filteredData);
+
+    const todayBuysell = [];
+    todayBuysell.push(...buysells);
+    todayBuysell.push(...filteredData);
+
+    if (todayBuysell.length < 20) {
+      const temp = await this.buysellModel.findAll({
+        where: { date: { [Op.lt]: formattedToday } },
+        limit: 20 - todayBuysell.length,
+      });
+      todayBuysell.push(...temp);
+    }
+
     // console.log(this.buysellData);
 
-    this.buysellData = newData;
+    //filterBuysell
+
+    // Định dạng ngày thành chuỗi "yyyy-MM-dd"
+
+    this.buysellData = todayBuysell;
     await this.eventsGateway.sendBuysellToAllClients(this.buysellData);
   }
 
   async getBuysell(dateFilter: string, ticker: string, limitNumber: string) {
     let whereCondition = {}; // Điều kiện tìm kiếm mặc định là trống
-    console.log(dateFilter);
-    console.log(limitNumber);
 
     // Nếu dateFilter hoặc ticker không null, thêm điều kiện tìm kiếm tương ứng
     if (dateFilter !== undefined) {
@@ -136,9 +168,9 @@ export class StockService {
     if (limitNumber !== undefined) {
       options['limit'] = Number(limitNumber);
     }
-
+    const realtimeData = await this.getBuysellProfitRealtime();
     const buysell = await this.buysellModel.findAll(options);
-    return buysell;
+    return { data: buysell, realtimeData };
   }
 
   async importBuysell(data) {

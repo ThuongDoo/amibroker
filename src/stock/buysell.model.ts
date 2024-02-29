@@ -1,11 +1,11 @@
-import { Column, Model, Table } from 'sequelize-typescript';
+import { Column, DataType, Model, Table } from 'sequelize-typescript';
 
 @Table
 export class Buysell extends Model {
   @Column
   ticker: string;
 
-  @Column
+  @Column(DataType.DATEONLY)
   date: Date;
 
   @Column

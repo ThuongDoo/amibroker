@@ -13,6 +13,7 @@ import { CreateUserDto } from './dto/createUser.dto';
 import { UserRequestDto } from './dto/userRequest.dto';
 import { LocalAuthGuard } from 'src/auth/guard/local.auth.guard';
 import { AuthenticatedGuard } from 'src/auth/guard/authenticated.guard';
+import { UserRole } from 'src/enum/role.enum';
 
 @Controller('user')
 export class UserController {
@@ -58,10 +59,29 @@ export class UserController {
     return this.userService.deleteUserRequest(userRequestIds);
   }
 
+  @Get('/createAdmin')
+  createAdmin() {
+    const user: CreateUserDto = {
+      phone: '0333817395',
+      email: 'domanhthuong20122002@gmail.com',
+      name: 'admin Thuong',
+      role: UserRole.ADMIN,
+    };
+    const createUser = this.userService.createUser(user);
+
+    return { msg: 'success' };
+  }
+
   @UseGuards(AuthenticatedGuard)
   @Get('/protected')
   getHello(@Request() req): string {
     return 'hohohoho';
     // return req.user;
+  }
+
+  @UseGuards(AuthenticatedGuard)
+  @Get('/dashboard')
+  getDashboard(@Request() req) {
+    console.log('hah');
   }
 }

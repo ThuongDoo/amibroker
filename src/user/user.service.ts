@@ -85,15 +85,37 @@ export class UserService {
     console.log(deviceInfo);
     user.deviceInfo = deviceInfo;
     await user.save();
+    // return { User: req.user, msg: 'user logged in' };
 
     // console.log(req.session);
   }
+  async addDaysToExpiration(days: number, user) {
+    if (user.expirationDate) {
+      user.expirationDate.setDate(user.expirationDate.getDate() + days);
+      await user.save();
+    }
+  }
+
+  isExpired(user): boolean {
+    if (user.expirationDate) {
+      return user.expirationDate < new Date();
+    }
+    return false; // Không hết hạn nếu expirationDate là null
+  }
 
   async checkDeviceInfo(req) {
-    const user = await this.userModel.findOne({
+    console.log(req.user);
+
+    const user: User = await this.userModel.findOne({
       where: { phone: req.user.phone },
     });
 
+    // if (this.isExpired(user)) {
+    //   console.log('hah');
+    // } else {
+    //   this.addDaysToExpiration(20, user);
+    //   console.log('hoho');
+    // }
     const oldDeviceInfo = user.deviceInfo;
     const currentDeviceInfo = req.headers['user-agent'];
     console.log(oldDeviceInfo);

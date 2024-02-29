@@ -35,4 +35,10 @@ export class User extends Model {
 
   @Column
   deviceInfo: string;
+
+  @Column({
+    allowNull: true,
+    type: DataType.DATE,
+  })
+  expirationDate: Date;
 }

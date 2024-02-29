@@ -5,9 +5,15 @@ import { SequelizeModule } from '@nestjs/sequelize';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { StockModule } from './stock/stock.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      envFilePath: ['.env'],
+      isGlobal: true,
+      cache: true,
+    }),
     SequelizeModule.forRoot({
       dialect: 'mysql',
       host: 'localhost',

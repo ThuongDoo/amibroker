@@ -16,7 +16,7 @@ async function bootstrap() {
   app.use(passport.session());
   app.setGlobalPrefix('api/v1');
   app.enableCors({
-    origin: ['http://localhost:3001', 'http://localhost:3002'], // Đổi thành domain của trang web gốc của bạn
+    origin: '*', 
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });

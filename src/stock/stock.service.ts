@@ -2,8 +2,8 @@ import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { EventsGateway } from 'src/events/events.gateway';
 import { Buysell } from './buysell.model';
-import { OrderItem, where } from 'sequelize';
-import { format, formatISO, parse, parseISO, subDays } from 'date-fns';
+import { OrderItem } from 'sequelize';
+import { format, parse } from 'date-fns';
 import { Op } from 'sequelize';
 
 @Injectable()
@@ -126,6 +126,8 @@ export class StockService {
       });
 
     const createdData = await this.buysellModel.bulkCreate(filteredData);
+    // delete
+    console.log(createdData);
 
     const todayBuysell = [];
     todayBuysell.push(...buysells);

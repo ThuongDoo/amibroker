@@ -35,6 +35,9 @@ export class EventsGateway
     console.log('Disconnect', client.id);
   }
   handleConnection(client: Socket, ...args: any[]) {
+    // delete
+    console.log(args);
+
     console.log('Connected', client.id);
   }
 

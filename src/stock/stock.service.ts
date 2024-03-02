@@ -98,7 +98,6 @@ export class StockService {
 
   async updateBuysell(data) {
     console.log('buysell');
-    console.log(data);
     
     const today = new Date();
 
@@ -116,6 +115,7 @@ export class StockService {
           status: item['Mua - Ban'],
         };
       });
+      console.log(newData);
 
     const buysells = await this.buysellModel.findAll({
       where: { date: formattedToday },
@@ -152,6 +152,10 @@ export class StockService {
     // Định dạng ngày thành chuỗi "yyyy-MM-dd"
 
     this.buysellData = todayBuysell;
+    console.log('thisbuysell');
+    console.log(this.buysellData);
+    
+    
     await this.eventsGateway.sendBuysellToAllClients(this.buysellData);
   }
 

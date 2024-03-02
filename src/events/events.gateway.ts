@@ -50,9 +50,6 @@ export class EventsGateway
   }
 
   async sendBuysellToAllClients(data: any) {
-    console.log('sendbuysel');
-    
-    console.log(data);
     
     const realtimeData = await this.stockService.getBuysellProfitRealtime();
 

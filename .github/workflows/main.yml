@@ -1,0 +1,64 @@
+name: Build and Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Build & Push Docker Image to Docker Hub, then deploy to production server'
+        required: true
+        default: 'Manual build from GitHub UI'
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  app-name: "ci-cd-website"
+
+jobs:
+  
+  build:
+    runs-on: [ self-hosted ]
+  
+    strategy:
+      matrix:
+        node-version: [18.x]
+        
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+      
+      # cache the dependencies to speed up the build
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      
+      - name: Install dependencies
+        run: yarn install
+      
+      - name: Build
+        run: yarn build
+      
+  deploy:
+    needs: build
+    runs-on: [ self-hosted ]
+    defaults:
+      run:
+        working-directory: '/home/dev/Documents/website'
+    
+    steps:
+      - name: Pull code
+        working-directory: '/home/dev/Documents/website/amibroker'
+        run: git pull origin master
+        
+      - name: Build and run
+        run: docker compose up -d --build

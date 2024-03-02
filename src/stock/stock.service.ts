@@ -85,6 +85,8 @@ export class StockService {
   }
 
   async updateStock(data) {
+    console.log('update stock');
+    
     if (data.data == 'done') {
       this.sendStock();
     } else {

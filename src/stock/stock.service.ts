@@ -97,7 +97,7 @@ export class StockService {
   //BUYSELL
 
   async updateBuysell(data) {
-    // console.log(data.data);
+    console.log('buysell');
     const today = new Date();
 
     const formattedToday = format(today, 'yyyy-MM-dd');

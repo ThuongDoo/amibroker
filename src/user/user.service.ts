@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { UserRequest } from './userRequest.model';
 import { User } from './user.model';
@@ -162,7 +162,7 @@ export class UserService {
     });
   }
 
-  async resetPassword(phone: number) {
+  async resetPassword(phone: string) {
     const salt = await bcrypt.genSalt(10);
     const password = await bcrypt.hash('123456', salt);
     const user = await this.userModel.findOne({ where: { phone: phone } });
@@ -172,5 +172,31 @@ export class UserService {
       return { msg: 'thay doi mat khau thanh cong' };
     }
     return { msg: 'user khong ton tai' };
+  }
+
+  async changePassword(
+    phone: string,
+    newPassword: string,
+    confirmPassword: string,
+  ) {
+    const user = await this.userModel.findOne({ where: { phone: phone } });
+    if (!user) {
+      throw new BadRequestException('no user');
+    }
+
+    const isPasswordCorrect = await bcrypt.compare(
+      confirmPassword,
+      user.password,
+    );
+    console.log(isPasswordCorrect);
+
+    if (isPasswordCorrect) {
+      const salt = await bcrypt.genSalt(10);
+      const password = await bcrypt.hash(newPassword, salt);
+      user.password = password;
+      await user.save();
+      return { msg: 'change password success' };
+    }
+    throw new BadRequestException('incorrect password');
   }
 }

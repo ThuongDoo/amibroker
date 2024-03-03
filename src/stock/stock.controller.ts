@@ -17,6 +17,11 @@ export class StockController {
     return this.stockService.getStockByName(stocksArray);
   }
 
+  @Get('/getSan')
+  getSan() {
+    return this.stockService.getSan();
+  }
+
   @Get('/getAll')
   getStocks() {
     return this.stockService.getStocks();

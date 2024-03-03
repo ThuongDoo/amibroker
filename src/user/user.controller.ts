@@ -108,7 +108,17 @@ export class UserController {
   }
 
   @Patch('/resetPassword')
-  resetPassword(phone: number) {
+  resetPassword(phone: string) {
     this.userService.resetPassword(phone);
+  }
+
+  @Patch('/changePassword')
+  changePassword(@Body() data) {
+    const { newPassword, confirmPassword, phone } = data;
+    console.log(data);
+
+    console.log(newPassword, confirmPassword, phone);
+
+    return this.userService.changePassword(phone, newPassword, confirmPassword);
   }
 }

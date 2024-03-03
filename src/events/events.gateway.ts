@@ -24,8 +24,9 @@ export class EventsGateway
     console.log('Received updateStockRequest from client:', payload);
     const data = await this.stockService.getStockByName(payload);
     console.log('Data send to client: ', data.length);
+    const sanData = this.stockService.getSan();
 
-    this.server.emit('updateStock', data);
+    this.server.emit('updateStock', { data, sanData });
   }
 
   afterInit(server: Server) {

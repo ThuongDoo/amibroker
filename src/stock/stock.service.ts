@@ -18,9 +18,56 @@ export class StockService {
   stockData = [];
   buysellData = [];
 
+  stockSan = [];
+
   tempData = '';
 
   buysellImported = [];
+
+  formatSan() {
+    const result = {};
+
+    // Lặp qua mảng data để lọc và tính toán
+    this.stockData.forEach((obj) => {
+      console.log(obj);
+
+      // Lấy giá trị của thuộc tính "San"
+      const san = obj['San'];
+
+      // Nếu đã tồn tại một mảng cho "San" này, thêm vào
+      if (result[san]) {
+        result[san]['Giahientai'] += Number(obj['Giahientai']);
+
+        result[san]['Tang/Giam'] += Number(obj['Tang/Giam']);
+        result[san]['Tang/Giam (%)'] += Number(obj['Tang/Giam (%)']);
+      } else {
+        // Nếu chưa tồn tại, tạo một mảng mới
+        result[san] = {
+          Giahientai: Number(obj['Giahientai']),
+
+          'Tang/Giam': Number(obj['Tang/Giam']),
+          'Tang/Giam (%)': Number(obj['Tang/Giam (%)']),
+        };
+      }
+    });
+
+    // Biến đổi kết quả thành mảng
+    const resultArray = Object.keys(result).map((san) => {
+      return {
+        San: san,
+        Giahientai: result[san].Giahientai,
+        'Tang/Giam': result[san]['Tang/Giam'],
+        'Tang/Giam (%)': result[san]['Tang/Giam (%)'],
+      };
+    });
+    this.stockSan = resultArray;
+    console.log('san');
+    console.log(this.stockSan);
+  }
+
+  getSan() {
+    return this.stockSan;
+  }
 
   formatData(csvData) {
     const convertToISO = (dateString) => {
@@ -79,6 +126,7 @@ export class StockService {
   async sendStock() {
     this.stockData = this.formatData(this.tempData);
     this.tempData = '';
+    this.formatSan();
     console.log('Data length: ', this.stockData.length);
 
     await this.eventsGateway.sendStockUpdateSignal();
@@ -96,8 +144,6 @@ export class StockService {
   //BUYSELL
 
   async updateBuysell(data) {
-    console.log('buysell');
-
     const today = new Date();
 
     const formattedToday = format(today, 'yyyy-MM-dd');
@@ -110,8 +156,9 @@ export class StockService {
         return {
           ticker: item.Ticker,
           date: item['Date/Time'],
-          price: item.Close,
-          status: item['Mua - Ban'],
+          profit: item['Lai/lo%'],
+          price: item.GiaHT,
+          status: item['Mua-Ban'],
         };
       });
 
@@ -139,6 +186,7 @@ export class StockService {
       const temp = await this.buysellModel.findAll({
         where: { date: { [Op.lt]: formattedToday } },
         limit: 20 - todayBuysell.length,
+        order: [['date', 'DESC']],
       });
       todayBuysell.push(...temp);
     }
@@ -151,14 +199,14 @@ export class StockService {
 
     this.buysellData = todayBuysell;
     console.log('thisbuysell');
-    console.log(this.buysellData);
+    // console.log(this.buysellData);
 
     await this.eventsGateway.sendBuysellToAllClients(this.buysellData);
   }
 
   async getBuysell(dateFilter: string, ticker: string, limitNumber: string) {
     let whereCondition = {}; // Điều kiện tìm kiếm mặc định là trống
-    console.log(dateFilter);
+    console.log('getbuysell');
 
     // Nếu dateFilter hoặc ticker không null, thêm điều kiện tìm kiếm tương ứng
     if (dateFilter !== undefined) {
@@ -192,6 +240,7 @@ export class StockService {
       try {
         await this.buysellModel.truncate();
         const results = await this.buysellModel.bulkCreate(newData);
+        console.log(results[3]);
 
         return results.length;
       } catch (error) {

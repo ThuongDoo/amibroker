@@ -1,4 +1,4 @@
-import { IsEmail, IsString } from 'class-validator';
+import { IsEmail, IsNumber, IsString } from 'class-validator';
 import { UserRole } from 'src/enum/role.enum';
 
 export class CreateUserDto {
@@ -13,4 +13,7 @@ export class CreateUserDto {
 
   @IsString()
   role: UserRole;
+
+  @IsNumber()
+  date: number;
 }

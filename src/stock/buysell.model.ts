@@ -8,7 +8,7 @@ export class Buysell extends Model {
   @Column(DataType.DATEONLY)
   date: Date;
 
-  @Column
+  @Column(DataType.FLOAT)
   price: number;
 
   @Column

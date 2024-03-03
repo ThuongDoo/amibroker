@@ -86,7 +86,6 @@ export class StockService {
 
   async updateStock(data) {
     console.log('update stock');
-    
     if (data.data == 'done') {
       this.sendStock();
     } else {
@@ -98,7 +97,7 @@ export class StockService {
 
   async updateBuysell(data) {
     console.log('buysell');
-    
+
     const today = new Date();
 
     const formattedToday = format(today, 'yyyy-MM-dd');
@@ -115,7 +114,6 @@ export class StockService {
           status: item['Mua - Ban'],
         };
       });
-      console.log(newData);
 
     const buysells = await this.buysellModel.findAll({
       where: { date: formattedToday },
@@ -154,13 +152,13 @@ export class StockService {
     this.buysellData = todayBuysell;
     console.log('thisbuysell');
     console.log(this.buysellData);
-    
-    
+
     await this.eventsGateway.sendBuysellToAllClients(this.buysellData);
   }
 
   async getBuysell(dateFilter: string, ticker: string, limitNumber: string) {
     let whereCondition = {}; // Điều kiện tìm kiếm mặc định là trống
+    console.log(dateFilter);
 
     // Nếu dateFilter hoặc ticker không null, thêm điều kiện tìm kiếm tương ứng
     if (dateFilter !== undefined) {
@@ -180,6 +178,8 @@ export class StockService {
     }
     const realtimeData = await this.getBuysellProfitRealtime();
     const buysell = await this.buysellModel.findAll(options);
+    console.log(buysell[0]);
+
     return { data: buysell, realtimeData };
   }
 

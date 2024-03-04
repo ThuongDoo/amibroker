@@ -149,7 +149,7 @@ export class StockService {
           ticker: item.Ticker,
           date: item['Date/Time'],
           profit: item['Lai/lo%'] || null,
-          price: item.GiaHT,
+          price: item.Giamua,
           status: item['Mua-Ban'],
         };
       });

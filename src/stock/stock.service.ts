@@ -25,23 +25,29 @@ export class StockService {
   buysellImported = [];
 
   formatSan() {
+    console.log('formatsan');
     const sanArray = ['VNINDEX', 'VN30', 'HNXINDEX', 'HNX30', 'UPINDEX'];
+    console.log(this.stockData[10]);
+
     const filteredObjects = this.stockData
-      .filter((obj) => sanArray.includes(obj.ticker))
+      .filter((obj) => sanArray.includes(obj.Ticker))
       .map((obj) => {
-        let ticker = obj.ticker;
-        if (ticker === 'HNXINDEX') {
-          ticker = 'HNK';
-        } else if (ticker === 'UPINDEX') {
-          ticker = 'UPCOM';
+        console.log(obj);
+
+        let Ticker = obj.Ticker;
+        if (Ticker === 'HNXINDEX') {
+          Ticker = 'HNK';
+        } else if (Ticker === 'UPINDEX') {
+          Ticker = 'UPCOM';
         }
         return {
-          ticker,
+          Ticker,
           Giahientai: obj.Giahientai,
           'Tang/Giam': obj['Tang/Giam'],
           'Tang/Giam (%)': obj['Tang/Giam (%)'],
         };
       });
+
     this.stockSan = filteredObjects;
     // Lặp qua mảng data để lọc và tính toán
   }

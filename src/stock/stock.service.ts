@@ -33,8 +33,6 @@ export class StockService {
     const filteredObjects = tempData
       .filter((obj) => sanArray.includes(obj.Ticker))
       .map((obj) => {
-        console.log(obj);
-
         let Ticker = obj.Ticker;
         if (Ticker === 'HNXINDEX') {
           Ticker = 'HNX';
@@ -220,7 +218,6 @@ export class StockService {
     }
     const realtimeData = await this.getBuysellProfitRealtime();
     const buysell = await this.buysellModel.findAll(options);
-    console.log(buysell[0]);
 
     return { data: buysell, realtimeData };
   }
@@ -234,7 +231,6 @@ export class StockService {
       try {
         await this.buysellModel.truncate();
         const results = await this.buysellModel.bulkCreate(newData);
-        console.log(results[3]);
 
         return results.length;
       } catch (error) {

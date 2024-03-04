@@ -14,8 +14,8 @@ import { Inject, Logger, forwardRef } from '@nestjs/common';
 @WebSocketGateway({
   cors: {
     origin: '*',
-    methods: ['GET', 'POST'],
-    transports: ['websocket', 'polling'],
+    // methods: ['GET', 'POST'],
+    // transports: ['websocket', 'polling'],
     // credentials: true,
   },
   // allowEIO3: true,

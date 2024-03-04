@@ -11,7 +11,15 @@ import { Server, Socket } from 'socket.io';
 import { StockService } from 'src/stock/stock.service';
 import { Inject, forwardRef } from '@nestjs/common';
 
-@WebSocketGateway({ cors: { origin: 'https://chungkhoanxyz.com' } })
+@WebSocketGateway({
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST'],
+    transports: ['websocket', 'polling'],
+    credentials: true,
+  },
+  allowEIO3: true,
+})
 export class EventsGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {

@@ -16,7 +16,7 @@ async function bootstrap() {
   app.use(passport.session());
   app.setGlobalPrefix('api/v1');
   app.enableCors({
-    origin: '*',
+    origin: ['*', 'http://localhost:3001'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });

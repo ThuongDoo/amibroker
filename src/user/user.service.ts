@@ -169,6 +169,7 @@ export class UserService {
     if (user) {
       user.password = password;
       await user.save();
+
       return { msg: 'thay doi mat khau thanh cong' };
     }
     return { msg: 'user khong ton tai' };
@@ -198,5 +199,42 @@ export class UserService {
       return { msg: 'change password success' };
     }
     throw new BadRequestException('incorrect password');
+  }
+
+  async updateUser(createUserDto: CreateUserDto) {
+    const user = await this.userModel.findOne({
+      where: { phone: createUserDto.phone },
+    });
+    if (!user) {
+      throw new BadRequestException('user not found');
+    }
+    try {
+      const today = new Date();
+      const userDate = user.expirationDate;
+      const futureDate = new Date();
+      // Sao chép ngày hôm nay vào một đối tượng mới để tránh thay đổi trực tiếp
+      if (userDate >= today) {
+        futureDate.setDate(userDate.getDate() + createUserDto.date);
+      } else {
+        futureDate.setDate(today.getDate() + createUserDto.date);
+      }
+
+      console.log(futureDate);
+
+      await user.update({
+        name: createUserDto.name,
+        email: createUserDto.email,
+        expirationDate: futureDate,
+      });
+    } catch (error) {
+      throw new BadRequestException('update failed');
+    }
+  }
+
+  async deleteUser(phone: string) {
+    const deleteCount = await this.userModel.destroy({
+      where: { phone: phone },
+    });
+    return deleteCount;
   }
 }

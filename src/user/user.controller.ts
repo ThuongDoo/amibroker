@@ -107,9 +107,11 @@ export class UserController {
     return this.userService.showMe(req);
   }
 
-  @Patch('/resetPassword')
-  resetPassword(phone: string) {
-    this.userService.resetPassword(phone);
+  @Patch('/resetPassword/:phone')
+  resetPassword(@Param('phone') phone: string) {
+    console.log(phone);
+
+    return this.userService.resetPassword(phone);
   }
 
   @Patch('/changePassword')
@@ -120,5 +122,15 @@ export class UserController {
     console.log(newPassword, confirmPassword, phone);
 
     return this.userService.changePassword(phone, newPassword, confirmPassword);
+  }
+
+  @Patch('/updateUser')
+  updateUser(@Body() data: CreateUserDto) {
+    return this.userService.updateUser(data);
+  }
+
+  @Delete('/deleteUser/:phone')
+  deleteUser(@Param('phone') phone: string) {
+    return this.userService.deleteUser(phone);
   }
 }

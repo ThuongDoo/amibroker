@@ -42,3 +42,5 @@ jobs:
     steps:        
       - name: Build and run
         run: docker compose up -d --build
+      - name: clean docker image
+        run: docker system prune -f

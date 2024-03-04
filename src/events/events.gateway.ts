@@ -18,7 +18,7 @@ import { Inject, forwardRef } from '@nestjs/common';
     transports: ['websocket', 'polling'],
     credentials: true,
   },
-  allowEIO3: true,
+  // allowEIO3: true,
 })
 export class EventsGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect

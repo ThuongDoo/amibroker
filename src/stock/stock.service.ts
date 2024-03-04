@@ -37,6 +37,7 @@ export class StockService {
         }
         return {
           ticker,
+          Giahientai: obj.Giahientai,
           'Tang/Giam': obj['Tang/Giam'],
           'Tang/Giam (%)': obj['Tang/Giam (%)'],
         };

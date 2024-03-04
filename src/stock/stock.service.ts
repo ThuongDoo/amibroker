@@ -27,9 +27,9 @@ export class StockService {
   formatSan() {
     console.log('formatsan');
     const sanArray = ['VNINDEX', 'VN30', 'HNXINDEX', 'HNX30', 'UPINDEX'];
-    console.log(this.stockData[10]);
 
-    const filteredObjects = this.stockData
+    const tempData = this.stockData;
+    const filteredObjects = tempData
       .filter((obj) => sanArray.includes(obj.Ticker))
       .map((obj) => {
         console.log(obj);

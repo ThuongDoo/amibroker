@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { StockService } from './stock.service';
 
 @Controller('stock')
@@ -44,5 +52,10 @@ export class StockController {
   @Post('/buysell/importFile')
   importBuysell(@Body() data) {
     return this.stockService.importBuysell(data);
+  }
+
+  @Patch('/updateMuaMoi')
+  updateMuaMoi() {
+    return this.stockService.updateMuaMoi();
   }
 }

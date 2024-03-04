@@ -250,4 +250,16 @@ export class StockService {
       };
     });
   }
+
+  async updateMuaMoi() {
+    const today = new Date();
+    const buysells = await this.buysellModel.findAll(
+      // { status: 1 },
+      {
+        where: { date: today, status: 1 },
+      },
+    );
+    console.log(buysells);
+    return buysells.length;
+  }
 }

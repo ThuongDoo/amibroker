@@ -148,7 +148,7 @@ export class StockService {
         return {
           ticker: item.Ticker,
           date: item['Date/Time'],
-          profit: item['Lai/lo%'],
+          profit: item['Lai/lo%'] || null,
           price: item.GiaHT,
           status: item['Mua-Ban'],
         };

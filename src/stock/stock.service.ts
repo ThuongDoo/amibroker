@@ -25,44 +25,24 @@ export class StockService {
   buysellImported = [];
 
   formatSan() {
-    const result = {};
-
-    // Lặp qua mảng data để lọc và tính toán
-    this.stockData.forEach((obj) => {
-      console.log(obj);
-
-      // Lấy giá trị của thuộc tính "San"
-      const san = obj['San'];
-
-      // Nếu đã tồn tại một mảng cho "San" này, thêm vào
-      if (result[san]) {
-        result[san]['Giahientai'] += Number(obj['Giahientai']);
-
-        result[san]['Tang/Giam'] += Number(obj['Tang/Giam']);
-        result[san]['Tang/Giam (%)'] += Number(obj['Tang/Giam (%)']);
-      } else {
-        // Nếu chưa tồn tại, tạo một mảng mới
-        result[san] = {
-          Giahientai: Number(obj['Giahientai']),
-
-          'Tang/Giam': Number(obj['Tang/Giam']),
-          'Tang/Giam (%)': Number(obj['Tang/Giam (%)']),
+    const sanArray = ['VNINDEX', 'VN30', 'HNXINDEX', 'HNX30', 'UPINDEX'];
+    const filteredObjects = this.stockData
+      .filter((obj) => sanArray.includes(obj.ticker))
+      .map((obj) => {
+        let ticker = obj.ticker;
+        if (ticker === 'HNXINDEX') {
+          ticker = 'HNK';
+        } else if (ticker === 'UPINDEX') {
+          ticker = 'UPCOM';
+        }
+        return {
+          ticker,
+          'Tang/Giam': obj['Tang/Giam'],
+          'Tang/Giam (%)': obj['Tang/Giam (%)'],
         };
-      }
-    });
-
-    // Biến đổi kết quả thành mảng
-    const resultArray = Object.keys(result).map((san) => {
-      return {
-        San: san,
-        Giahientai: result[san].Giahientai,
-        'Tang/Giam': result[san]['Tang/Giam'],
-        'Tang/Giam (%)': result[san]['Tang/Giam (%)'],
-      };
-    });
-    this.stockSan = resultArray;
-    console.log('san');
-    console.log(this.stockSan);
+      });
+    this.stockSan = filteredObjects;
+    // Lặp qua mảng data để lọc và tính toán
   }
 
   getSan() {

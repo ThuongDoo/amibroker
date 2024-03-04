@@ -27,6 +27,7 @@ export class StockService {
   formatSan() {
     console.log('formatsan');
     const sanArray = ['VNINDEX', 'VN30', 'HNXINDEX', 'HNX30', 'UPINDEX'];
+    const sortArray = ['VNINDEX', 'VN30', 'HNX', 'HNX30', 'UPCOM'];
 
     const tempData = this.stockData;
     const filteredObjects = tempData
@@ -36,7 +37,7 @@ export class StockService {
 
         let Ticker = obj.Ticker;
         if (Ticker === 'HNXINDEX') {
-          Ticker = 'HNK';
+          Ticker = 'HNX';
         } else if (Ticker === 'UPINDEX') {
           Ticker = 'UPCOM';
         }
@@ -48,7 +49,13 @@ export class StockService {
         };
       });
 
-    this.stockSan = filteredObjects;
+    function customSort(a, b) {
+      return sortArray.indexOf(a.Ticker) - sortArray.indexOf(b.Ticker);
+    }
+    const sortedData = filteredObjects.sort(customSort);
+
+    this.stockSan = sortedData;
+
     // Lặp qua mảng data để lọc và tính toán
   }
 

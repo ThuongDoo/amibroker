@@ -253,10 +253,10 @@ export class StockService {
 
   async updateMuaMoi() {
     const today = new Date();
-    const buysells = await this.buysellModel.findAll(
-      // { status: 1 },
+    const buysells = await this.buysellModel.update(
+      { status: 1 },
       {
-        where: { date: today, status: 1 },
+        where: { date: today, status: 2 },
       },
     );
     console.log(buysells);

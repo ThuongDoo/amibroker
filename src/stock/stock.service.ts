@@ -149,10 +149,13 @@ export class StockService {
           ticker: item.Ticker,
           date: item['Date/Time'],
           profit: item['Lai/lo%'] || null,
-          price: item.Giamua,
+          price: Number(item.Giamua),
           status: item['Mua-Ban'],
         };
       });
+    console.log('buysell');
+
+    console.log(newData);
 
     const buysells = await this.buysellModel.findAll({
       where: { date: formattedToday },
@@ -218,6 +221,7 @@ export class StockService {
     }
     const realtimeData = await this.getBuysellProfitRealtime();
     const buysell = await this.buysellModel.findAll(options);
+    console.log(buysell);
 
     return { data: buysell, realtimeData };
   }
@@ -231,8 +235,9 @@ export class StockService {
       try {
         await this.buysellModel.truncate();
         const results = await this.buysellModel.bulkCreate(newData);
+        console.log(results.length);
 
-        return results.length;
+        return results;
       } catch (error) {
         throw error;
       }

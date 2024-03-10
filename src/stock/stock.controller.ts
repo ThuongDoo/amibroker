@@ -41,12 +41,17 @@ export class StockController {
   }
 
   @Get('/buysell')
-  getBuysell(
+  getBuysell() {
+    return this.stockService.getBuysell();
+  }
+
+  @Get('/filterBuysell')
+  filterBuysell(
     @Query('date') dateFilter: string,
     @Query('ticker') ticker: string,
     @Query('limit') limit: string,
   ) {
-    return this.stockService.getBuysell(dateFilter, ticker, limit);
+    return this.stockService.filterBuysell(dateFilter, ticker, limit);
   }
 
   @Post('/buysell/importFile')

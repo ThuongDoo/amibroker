@@ -31,11 +31,10 @@ export class EventsGateway
   @WebSocketServer() server: Server;
   @SubscribeMessage('updateStockRequest')
   async handleUpdateStock(client: Socket, payload: any) {
-    console.log('Received updateStockRequest from client:', payload);
     const data = await this.stockService.getStockByName(payload);
-    console.log('Data send to client: ', data.length);
+    this.logger.log(`Data send to client: ${data.length}`);
+
     const sanData = this.stockService.getSan();
-    console.log('sandata', sanData);
 
     client.emit('updateStock', { data, sanData });
   }
@@ -44,14 +43,12 @@ export class EventsGateway
     console.log(server);
   }
   handleDisconnect(client: Socket) {
-    console.log('Disconnect', client.id);
+    this.logger.log(`Disconnect: ${client.id}`);
   }
   handleConnection(client: Socket, ...args: any[]) {
     // delete
     this.logger.log(`Client connected: ${client.id}`);
     console.log(args);
-
-    console.log('Connected', client.id);
   }
 
   // async sendStockToAllClients(data: any) {
@@ -59,11 +56,14 @@ export class EventsGateway
   //   this.server.emit('stock', { data: data, realtimeData });
   // }
   async sendStockUpdateSignal() {
+    this.logger.log(`Emit stock update signal`);
+
     this.server.emit('stockUpdated', true);
   }
 
   async sendBuysellToAllClients(data: any) {
     // const realtimeData = await this.stockService.getBuysellProfitRealtime();
+    this.logger.log(`Emit buy sell to client`);
 
     this.server.emit('buysell', { data: data });
   }

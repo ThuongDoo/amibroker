@@ -30,7 +30,6 @@ export class StockService {
   buysellImported = [];
 
   async formatSan() {
-    console.log('formatsan');
     const sanArray = ['VNINDEX', 'VN30', 'HNXINDEX', 'HNX30', 'UPINDEX'];
     const sortArray = ['VNINDEX', 'VN30', 'HNX', 'HNX30', 'UPCOM'];
 
@@ -57,7 +56,7 @@ export class StockService {
     }
     const sortedData = filteredObjects.sort(customSort);
 
-    this.stockSan = sortedData;
+    return sortedData;
 
     // Lặp qua mảng data để lọc và tính toán
   }
@@ -123,14 +122,12 @@ export class StockService {
   async sendStock() {
     this.stockData = await this.formatData(this.tempData);
     this.tempData = '';
-    await this.formatSan();
-    console.log('Data length: ', this.stockData.length);
+    this.stockData = await this.formatSan();
 
     await this.eventsGateway.sendStockUpdateSignal();
   }
 
   async updateStock(data) {
-    console.log('update stock');
     if (data.data == 'done') {
       this.sendStock();
     } else {
@@ -141,60 +138,102 @@ export class StockService {
   //BUYSELL
 
   async sendBuysell() {
-    const filterSellSignal = (sellSignalData, buysell) => {
-      for (const newItem of sellSignalData) {
-        // Tìm bản ghi từ buysell có cùng ticker với newItem
-        const matchedBuysell = buysell.find(
-          (item) => item.ticker === newItem.ticker,
-        );
-        if (matchedBuysell) {
-          const tempData = newItem;
+    const filterNotFoundWithNonNullStatus = async (newData, buysell) => {
+      // Lọc ra các phần tử không tìm thấy trong buysell
+      const notFoundInBuySell = await newData.filter(
+        (newItem) =>
+          !buysell.some((buySellItem) => buySellItem.ticker === newItem.ticker),
+      );
 
-          // Gán id từ buysell cho newItem
+      // Lọc ra các phần tử có status không phải null
+      const notFoundInBuySellFiltered = await notFoundInBuySell
+        .filter((item) => item.status !== null)
+        .map((item) => {
+          return { ...item, status: 3, sortTime: item.knTime };
+        });
 
-          newItem.id = matchedBuysell.id;
-          newItem.knTime = matchedBuysell.knTime;
-          newItem.buyPrice = matchedBuysell.buyPrice;
-          newItem.sellPrice = tempData.buyPrice;
-          newItem.sellTime = tempData.knTime;
-          newItem.sortTime = tempData.knTime;
-        }
-      }
-      return sellSignalData.filter((item) => item.id !== null);
+      return notFoundInBuySellFiltered;
     };
-    const filterNoSignal = (noSignalData, buysell) => {
-      for (const newItem of noSignalData) {
-        // Tìm bản ghi từ buysell có cùng ticker với newItem
-        const matchedBuysell = buysell.find(
-          (item) => item.ticker === newItem.ticker,
-        );
-        if (matchedBuysell) {
-          // Gán id từ buysell cho newItem
 
-          newItem.id = matchedBuysell.id;
-          newItem.knTime = matchedBuysell.knTime;
-          newItem.buyPrice = matchedBuysell.buyPrice;
-          newItem.sellPrice = null;
-          newItem.sellTime = null;
-          newItem.sortTime = matchedBuysell.knTime;
-          newItem.status = matchedBuysell.status;
-        }
-      }
-      return noSignalData.filter((item) => item.id !== null);
+    const updateBuy = async (stocks) => {
+      const status0Array = await stocks.filter(
+        (item) => item.buysell.status === 0,
+      );
+
+      const createdData = await status0Array.map((item) => {
+        return {
+          ...item.newData, // Giữ nguyên các thuộc tính khác của newData
+          status: 3, // Gán status = 3
+          sortTime: item.newData.knTime,
+        };
+      });
+
+      const nonZeroStatusArray = await stocks.filter(
+        (item) => item.buysell.status !== 0,
+      );
+
+      const updatedData = await nonZeroStatusArray.map((item) => {
+        return {
+          ...item.buysell, // Giữ nguyên các thuộc tính của buysell
+          createdAt: undefined, // Loại bỏ thuộc tính createdAt
+          updatedAt: undefined, // Loại bỏ thuộc tính updatedAt
+          profit: item.newData.profit, // Gán profit = newData.profit
+        };
+      });
+
+      const mergedData = [...createdData, ...updatedData];
+
+      return mergedData;
+    };
+    const updateSell = async (stocks) => {
+      const nonZeroStatusArray = await stocks.filter(
+        (item) => item.buysell.status !== 0,
+      );
+
+      const updatedData = await nonZeroStatusArray.map((item) => {
+        return {
+          ...item.buysell, // Giữ nguyên các thuộc tính của buysell
+          createdAt: undefined, // Loại bỏ thuộc tính createdAt
+          updatedAt: undefined, // Loại bỏ thuộc tính updatedAt
+          profit: item.newData.profit, // Gán profit = newData.profit
+          sellTime: item.newData.knTime,
+          sortTime: item.newData.knTime,
+          holdingDuration: item.newData.holdingDuration,
+          status: 0,
+        };
+      });
+
+      return updatedData;
+    };
+    const updateNull = async (stocks) => {
+      // console.log(stocks);
+      const nonZeroStatusArray = await stocks.filter(
+        (item) => item.buysell.status !== 0,
+      );
+      const updatedData = await nonZeroStatusArray.map((item) => {
+        return {
+          ...item.buysell, // Giữ nguyên các thuộc tính của buysell
+          createdAt: undefined, // Loại bỏ thuộc tính createdAt
+          updatedAt: undefined, // Loại bỏ thuộc tính updatedAt
+          profit: item.newData.profit, // Gán profit = newData.profit
+          holdingDuration: item.newData.holdingDuration,
+          status: 2,
+        };
+      });
+
+      return updatedData;
     };
     const data = this.buysellData;
 
     this.buysellData = [];
-    const today = new Date();
+    // const today = new Date();
 
-    const formattedToday = format(today, 'yyyy-MM-dd');
+    // const formattedToday = format(today, 'yyyy-MM-dd');
 
     const newData = this.formatData(data)
       .filter(
-        (item) =>
-          item.Ticker !== '' &&
-          !deletedBuysell.includes(item.Ticker) &&
-          item['Date/Time'] === formattedToday,
+        (item) => item.Ticker !== '' && !deletedBuysell.includes(item.Ticker),
+        // item['Date/Time'] === formattedToday,
       )
       .map((item) => {
         return {
@@ -204,46 +243,94 @@ export class StockService {
           buyPrice: Number(item['Giamua/ban']),
           holdingDuration: Number(item['T ']),
           status: item['Mua-Ban'] === '' ? null : Number(item['Mua-Ban']),
-          id: null,
-          sellTime: null,
-          sellPrice: null,
-          sortTime: item['Date/Time'],
         };
       });
+
     const tickerArray = newData.map((item) => item.ticker);
+
     // lấy tất cả ticker
     const buysell = await this.stockBuysellModel.findAll({
       where: { ticker: tickerArray },
       order: [['sortTime', 'DESC']],
     });
 
-    //lọc phần tử có id
+    // Lặp qua từng phần tử trong newData
+    const combinedData = [];
 
-    const buySignalData = newData.filter((item) => item.status === 1);
-    // Duyệt qua từng phần tử trong newData để gán id
-    let sellSignalData = newData.filter((item) => item.status === 0);
-    let noSignalData = newData.filter((item) => item.status === null);
+    // Lặp qua từng phần tử trong newData
+    newData.forEach((newItem) => {
+      // Tìm phần tử trong buysell có cùng ticker
+      const correspondingBuySell = buysell.find(
+        (buySellItem) => buySellItem.ticker === newItem.ticker,
+      );
 
-    sellSignalData = filterSellSignal(sellSignalData, buysell);
-    await this.stockBuysellModel.bulkCreate(sellSignalData, {
-      updateOnDuplicate: ['id'],
+      // Nếu tìm thấy phần tử trong buysell có cùng ticker
+      if (correspondingBuySell) {
+        // Tạo một đối tượng mới kết hợp dữ liệu từ cả hai mảng
+        const combinedItem = {
+          newData: newItem,
+          buysell: correspondingBuySell?.dataValues,
+        };
+        // Thêm đối tượng mới vào mảng combinedData
+        combinedData.push(combinedItem);
+      }
     });
 
-    noSignalData = filterNoSignal(noSignalData, buysell);
-    await this.stockBuysellModel.bulkCreate(noSignalData, {
-      updateOnDuplicate: ['id'],
+    // Lọc ra các trường hợp không tìm thấy phần tử cùng ticker trong buysell
+    const notFoundInBuySellFiltered = await filterNotFoundWithNonNullStatus(
+      newData,
+      buysell,
+    );
+
+    const status0Group = [];
+    const status1Group = [];
+    const nullStatusGroup = [];
+
+    // Duyệt qua mỗi phần tử trong combinedData
+    combinedData.forEach((item) => {
+      // Tùy thuộc vào giá trị của newData.status, thêm phần tử vào nhóm tương ứng
+      switch (item.newData.status) {
+        case 0:
+          status0Group.push(item);
+          break;
+        case 1:
+          status1Group.push(item);
+          break;
+        default:
+          nullStatusGroup.push(item);
+          break;
+      }
     });
 
-    await this.stockBuysellModel.bulkCreate(buySignalData);
+    const updatedBuy = await updateBuy(status1Group);
+    const updatedSell = await updateSell(status0Group);
+    const updatedNull = await updateNull(nullStatusGroup);
+
+    const mergedArray = [
+      ...updatedBuy,
+      ...updatedSell,
+      ...updatedNull,
+      ...notFoundInBuySellFiltered,
+    ];
+
+    await this.stockBuysellModel.bulkCreate(mergedArray, {
+      updateOnDuplicate: [
+        'sellTime',
+        'sortTime',
+        'sellPrice',
+        'profit',
+        'holdingDuration',
+        'risk',
+        'status',
+      ],
+    });
 
     const result = await this.getBuysell();
-    console.log(result.data);
 
     await this.eventsGateway.sendBuysellToAllClients(result.data);
   }
 
   async updateBuysell(data) {
-    console.log('update buysell');
     if (data.data == 'done') {
       this.sendBuysell();
     } else {
@@ -283,7 +370,6 @@ export class StockService {
 
   async getBuysell() {
     const today = new Date();
-    console.log('today', today);
 
     const buysell = [];
 
@@ -315,7 +401,7 @@ export class StockService {
       try {
         await this.stockBuysellModel.truncate();
         const results = await this.stockBuysellModel.bulkCreate(newData);
-        console.log(results.length);
+        console.log('imported file length', results.length);
 
         return results;
       } catch (error) {
@@ -335,7 +421,6 @@ export class StockService {
         where: { date: today, status: 2 },
       },
     );
-    console.log(buysells);
     return buysells.length;
   }
 }

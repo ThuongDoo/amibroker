@@ -29,7 +29,7 @@ export class StockService {
 
   buysellImported = [];
 
-  formatSan() {
+  async formatSan() {
     console.log('formatsan');
     const sanArray = ['VNINDEX', 'VN30', 'HNXINDEX', 'HNX30', 'UPINDEX'];
     const sortArray = ['VNINDEX', 'VN30', 'HNX', 'HNX30', 'UPCOM'];
@@ -121,9 +121,9 @@ export class StockService {
   }
 
   async sendStock() {
-    this.stockData = this.formatData(this.tempData);
+    this.stockData = await this.formatData(this.tempData);
     this.tempData = '';
-    this.formatSan();
+    await this.formatSan();
     console.log('Data length: ', this.stockData.length);
 
     await this.eventsGateway.sendStockUpdateSignal();

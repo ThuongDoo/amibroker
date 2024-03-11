@@ -36,7 +36,7 @@ export class EventsGateway
     console.log('Data send to client: ', data.length);
     const sanData = this.stockService.getSan();
 
-    this.server.emit('updateStock', { data, sanData });
+    client.emit('updateStock', { data, sanData });
   }
 
   afterInit(server: Server) {

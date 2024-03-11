@@ -283,6 +283,7 @@ export class StockService {
 
   async getBuysell() {
     const today = new Date();
+    console.log('today', today);
 
     const buysell = [];
 

@@ -112,6 +112,8 @@ export class StockService {
 
   async getStocks() {
     const data = this.stockData.map((item) => item.Ticker);
+    console.log('data', data);
+
     return data;
   }
 
@@ -121,8 +123,9 @@ export class StockService {
 
   async sendStock() {
     this.stockData = await this.formatData(this.tempData);
+
     this.tempData = '';
-    this.stockData = await this.formatSan();
+    this.stockSan = await this.formatSan();
 
     await this.eventsGateway.sendStockUpdateSignal();
   }

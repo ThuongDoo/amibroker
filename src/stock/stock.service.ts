@@ -191,11 +191,11 @@ export class StockService {
       return mergedData;
     };
     const updateSell = async (stocks) => {
-      const nonZeroStatusArray = await stocks.filter(
-        (item) => item.buysell.status !== 0,
-      );
+      // const nonZeroStatusArray = await stocks.filter(
+      //   (item) => item.buysell.status !== 0,
+      // );
 
-      const updatedData = await nonZeroStatusArray.map((item) => {
+      const updatedData = await stocks.map((item) => {
         return {
           ...item.buysell, // Giữ nguyên các thuộc tính của buysell
           createdAt: undefined, // Loại bỏ thuộc tính createdAt

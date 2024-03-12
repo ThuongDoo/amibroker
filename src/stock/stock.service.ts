@@ -181,6 +181,8 @@ export class StockService {
           createdAt: undefined, // Loại bỏ thuộc tính createdAt
           updatedAt: undefined, // Loại bỏ thuộc tính updatedAt
           profit: item.newData.profit, // Gán profit = newData.profit
+          buyPrice: item.newData.buyPrice,
+          knTime: item.newData.knTime,
         };
       });
 
@@ -202,6 +204,7 @@ export class StockService {
           sellTime: item.newData.knTime,
           sortTime: item.newData.knTime,
           holdingDuration: item.newData.holdingDuration,
+          sellPrice: item.newData.buyPrice,
           status: 0,
         };
       });
@@ -292,16 +295,12 @@ export class StockService {
     // Duyệt qua mỗi phần tử trong combinedData
     combinedData.forEach((item) => {
       // Tùy thuộc vào giá trị của newData.status, thêm phần tử vào nhóm tương ứng
-      switch (item.newData.status) {
-        case 0:
-          status0Group.push(item);
-          break;
-        case 1:
-          status1Group.push(item);
-          break;
-        default:
-          nullStatusGroup.push(item);
-          break;
+      if (item.newData.status === null) {
+        nullStatusGroup.push(item);
+      } else if (item.newData.status === 0) {
+        status0Group.push(item);
+      } else {
+        status1Group.push(item);
       }
     });
 
@@ -318,6 +317,8 @@ export class StockService {
 
     await this.stockBuysellModel.bulkCreate(mergedArray, {
       updateOnDuplicate: [
+        'knTime',
+        'buyPrice',
         'sellTime',
         'sortTime',
         'sellPrice',

@@ -405,7 +405,7 @@ export class StockService {
       try {
         await this.stockBuysellModel.truncate();
         const results = await this.stockBuysellModel.bulkCreate(newData);
-        console.log('imported file length', results.length);
+        console.log('imported file length: ', results.length);
 
         return results;
       } catch (error) {

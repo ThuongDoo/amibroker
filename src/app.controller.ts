@@ -1,35 +1,21 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
-import * as moment from 'moment';
+import * as os from 'os';
 
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
-
-  @Get()
-  getHello(): string {
-    console.log(moment(new Date()).format('YYYY-MM-DD HH:mm:ss'));
-
-    return this.appService.getHello();
+  @Get('cpu-usage')
+  getCpuUsage(): any {
+    const usage = process.cpuUsage();
+    const cpuUsage =
+      (usage.user + usage.system) / (os.cpus().length * 1000 * 1000);
+    return { cpuUsage: cpuUsage };
   }
 
-  @Post()
-  getData(@Body() data) {
-    const currentTime = moment(new Date()).format('YYYY-MM-DD HH:mm:ss');
-    console.log(currentTime);
-    const newData = data.data;
-    const lines = newData.split('\r\n');
-    const headers = lines[0].split(',');
-    const result = [];
-    for (let i = 1; i < lines.length - 1; i++) {
-      const values = lines[i].split(',');
-      const obj = {};
-      for (let j = 0; j < headers.length; j++) {
-        obj[headers[j]] = values[j];
-      }
-      result.push(obj);
-    }
-
-    console.log(result);
+  @Get('memory-usage')
+  getMemoryUsage(): any {
+    const usage = process.memoryUsage();
+    return usage;
   }
 }

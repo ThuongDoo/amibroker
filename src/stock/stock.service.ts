@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/sequelize';
 import { EventsGateway } from 'src/events/events.gateway';
 import { Buysell } from './buysell.model';
 import { OrderItem } from 'sequelize';
-import { format, parse } from 'date-fns';
+import { format, isSameDay, parse } from 'date-fns';
 import { Op } from 'sequelize';
 import { StockBuySell } from './stockBuysell.model';
 import { deletedBuysell } from 'src/constant/deletedBuysell';
@@ -183,6 +183,8 @@ export class StockService {
           profit: item.newData.profit, // Gán profit = newData.profit
           buyPrice: item.newData.buyPrice,
           knTime: item.newData.knTime,
+          holdingDuration: item.newData.holdingDuration,
+          status: 3,
         };
       });
 
@@ -216,7 +218,19 @@ export class StockService {
       const nonZeroStatusArray = await stocks.filter(
         (item) => item.buysell.status !== 0,
       );
-      const updatedData = await nonZeroStatusArray.map((item) => {
+      const filteredArray = [];
+      await Promise.all(
+        nonZeroStatusArray.map(async (item) => {
+          if (isSameDay(item.buysell.knTime, item.newData.knTime)) {
+            await this.stockBuysellModel.destroy({
+              where: { id: item.buysell.id },
+            });
+          } else {
+            filteredArray.push(item);
+          }
+        }),
+      );
+      const updatedData = await filteredArray.map((item) => {
         return {
           ...item.buysell, // Giữ nguyên các thuộc tính của buysell
           createdAt: undefined, // Loại bỏ thuộc tính createdAt
@@ -404,9 +418,20 @@ export class StockService {
       this.buysellImported = [];
       try {
         await this.stockBuysellModel.truncate();
-        const results = await this.stockBuysellModel.bulkCreate(newData);
-        console.log('imported file length: ', results.length);
+        const chunkSize = 2000; // Số lượng mục mỗi chunk
+        const totalData = newData.length;
+        let startIndex = 0;
+        let results = [];
 
+        while (startIndex < totalData) {
+          const chunkData = newData.slice(startIndex, startIndex + chunkSize);
+          const chunkResults =
+            await this.stockBuysellModel.bulkCreate(chunkData);
+          results = results.concat(chunkResults);
+          startIndex += chunkSize;
+        }
+
+        console.log('imported file length: ', results.length);
         return results;
       } catch (error) {
         throw error;

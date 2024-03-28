@@ -39,6 +39,13 @@ export class EventsGateway
     client.emit('updateStock', { data, sanData });
   }
 
+  @SubscribeMessage('updateFilterRequest')
+  async handleUpdateFilter(client: Socket, payload: any) {
+    const data = await this.stockService.getFilter(payload);
+    this.logger.log(`Update Filter to client: ${data.length}`);
+    client.emit('updateFilter', { data });
+  }
+
   afterInit(server: Server) {
     console.log(server);
   }

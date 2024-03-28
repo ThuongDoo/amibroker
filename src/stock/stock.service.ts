@@ -21,6 +21,7 @@ export class StockService {
     private stockBuysellModel: typeof StockBuySell,
   ) {}
   stockData = [];
+
   buysellData = [];
 
   stockSan = [];
@@ -451,5 +452,82 @@ export class StockService {
       },
     );
     return buysells.length;
+  }
+
+  getFilter(filterParam) {
+    const trend = { isChecked: true, name: 'Trend', value: 2 };
+    const uptrend = filterParam.Uptrend;
+    const downtrend = filterParam.Downtrend;
+    if (uptrend.isChecked && downtrend.isChecked) {
+      trend.value = 2;
+    } else if (uptrend.isChecked) {
+      trend.value = 1;
+    } else if (downtrend.isChecked) {
+      trend.value = 0;
+    } else {
+      trend.isChecked = false;
+    }
+
+    delete filterParam.Downtrend;
+    delete filterParam.Uptrend;
+    filterParam.Trend = trend;
+
+    const filterDate: any[] = Object.values(filterParam);
+
+    const filterData = filterDate.filter((item) => {
+      if (item.isChecked === false) {
+        return false;
+      }
+      if (item.condition === 'range') {
+        if (
+          item.value1 === '' ||
+          item.value2 === '' ||
+          item.value1 === undefined ||
+          !item.value2 === undefined
+        ) {
+          return false;
+        }
+      } else if (item.value === '' || item.value === undefined) {
+        return false;
+      }
+      return true;
+    });
+    const checkCondition = (objA, objB) => {
+      if (objA.Ticker.length > 3) return false;
+      for (const item of objB) {
+        if (item.condition) {
+          if (item.condition === 'range') {
+            // item.value1 <= obja <=item.value2
+            if (
+              item.value1 > Number(objA[item.name]) ||
+              item.value2 < Number(objA[item.name])
+            ) {
+              return false;
+            }
+          } else if (item.condition === '<=') {
+            if (Number(objA[item.name]) > item.value) {
+              return false;
+            }
+          } else if (item.condition === '>=') {
+            if (Number(objA[item.name]) < item.value) {
+              return false;
+            }
+          } else if (item.condition === '=') {
+            if (item.value != Number(objA[item.name])) {
+              return false;
+            }
+          }
+        } else if (item.value != objA[item.name]) {
+          return false;
+        }
+      }
+      return true;
+    };
+
+    console.log(filterData);
+    const result = this.stockData;
+
+    const a = result.filter((item) => checkCondition(item, filterData));
+    return a;
   }
 }

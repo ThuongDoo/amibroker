@@ -63,4 +63,9 @@ export class StockController {
   updateMuaMoi() {
     return this.stockService.updateMuaMoi();
   }
+
+  @Post('/filter')
+  filter(@Body() filterParam: any) {
+    return this.stockService.getFilter(filterParam);
+  }
 }

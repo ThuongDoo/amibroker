@@ -68,4 +68,29 @@ export class StockController {
   filter(@Body() filterParam: any) {
     return this.stockService.getFilter(filterParam);
   }
+
+  @Get('/chartData/import')
+  async importChartData() {
+    return await this.stockService.importChartData();
+  }
+
+  @Get('/chartData/importIntraday')
+  async importIntradayChartData() {
+    return await this.stockService.importIntradayChartData();
+  }
+
+  @Get('/chartData/importDaily')
+  async importDailyChartData() {
+    return await this.stockService.importDailyChartData();
+  }
+
+  @Get('/chartData')
+  async getChartData(
+    @Query('ticker') ticker: string,
+    @Query('timeframe') timeframe: string,
+  ) {
+    console.log('ticker', ticker);
+
+    return await this.stockService.getChartData(ticker, timeframe);
+  }
 }

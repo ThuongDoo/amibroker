@@ -3,10 +3,13 @@ import { InjectModel } from '@nestjs/sequelize';
 import { EventsGateway } from 'src/events/events.gateway';
 import { Buysell } from './buysell.model';
 import { OrderItem } from 'sequelize';
-import { format, isSameDay, parse } from 'date-fns';
+import { addHours, format, isSameDay, parse, subDays } from 'date-fns';
 import { Op } from 'sequelize';
 import { StockBuySell } from './stockBuysell.model';
 import { deletedBuysell } from 'src/constant/deletedBuysell';
+import axios from 'axios';
+import { ChartData } from './chartData.model';
+import { IntradayChartdata } from './intradayChartData.model';
 
 @Injectable()
 export class StockService {
@@ -19,6 +22,12 @@ export class StockService {
 
     @InjectModel(StockBuySell)
     private stockBuysellModel: typeof StockBuySell,
+
+    @InjectModel(ChartData)
+    private chartDataModel: typeof ChartData,
+
+    @InjectModel(IntradayChartdata)
+    private intradayChartDataModel: typeof IntradayChartdata,
   ) {}
   // stockData = [];
 
@@ -33,6 +42,8 @@ export class StockService {
   tempData = '';
 
   buysellImported = [];
+
+  token;
 
   async formatSan() {
     const sanArray = ['VNINDEX', 'VN30', 'HNXINDEX', 'HNX30', 'UPINDEX'];
@@ -553,5 +564,292 @@ export class StockService {
       };
     });
     return newResult;
+  }
+
+  async getSSIAccessToken() {
+    const lookupEndpoint = 'api/v2/Market/AccessToken';
+    await axios
+      .post(process.env.SSI_API + lookupEndpoint, {
+        consumerID: process.env.SSI_ID,
+        consumerSecret: process.env.SSI_SECRET,
+      })
+      .then((res) => (this.token = res.data.data.accessToken))
+      .catch((e) => console.log(e));
+  }
+
+  async getStockList() {
+    const lookupRequest: any = {};
+    lookupRequest.exchange = '';
+    lookupRequest.pageIndex = 1;
+    lookupRequest.pageSize = 1000;
+    lookupRequest.endpoint = 'api/v2/Market/Securities';
+    let result;
+    await axios
+      .get(
+        process.env.SSI_API +
+          lookupRequest.endpoint +
+          '?lookupRequest.exchange=' +
+          lookupRequest.exchange +
+          '&lookupRequest.pageIndex=' +
+          lookupRequest.pageIndex +
+          '&lookupRequest.pageSize=' +
+          lookupRequest.pageSize,
+        {
+          headers: {
+            Authorization: 'Bearer ' + this.token,
+          },
+        },
+      )
+      .then((response) => {
+        result = response.data.data;
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+    const stockList = result.map((item) => {
+      return item.Symbol;
+    });
+    // TODO.DELETE
+    // const tempStockList = stockList.slice(0, 1);
+    return stockList;
+  }
+
+  async getSSIChartData(ticker: string, fromDate: string) {
+    const lookupRequest: any = {};
+
+    lookupRequest.symbol = ticker;
+    lookupRequest.fromDate = fromDate;
+    lookupRequest.toDate = '';
+    lookupRequest.pageIndex = 1;
+    lookupRequest.pageSize = 9999;
+    lookupRequest.ascending = true;
+    lookupRequest.endpoint = 'api/v2/Market/DailyOhlc';
+
+    let result;
+
+    await axios
+      .get(
+        process.env.SSI_API +
+          lookupRequest.endpoint +
+          '?lookupRequest.symbol=' +
+          lookupRequest.symbol +
+          '&lookupRequest.fromDate=' +
+          lookupRequest.fromDate +
+          '&lookupRequest.toDate=' +
+          lookupRequest.toDate +
+          '&lookupRequest.pageIndex=' +
+          lookupRequest.pageIndex +
+          '&lookupRequest.pageSize=' +
+          lookupRequest.pageSize +
+          '&lookupRequest.ascending=' +
+          lookupRequest.ascending,
+        {
+          headers: {
+            Authorization: 'Bearer ' + this.token,
+          },
+        },
+      )
+      .then((response) => {
+        result = response.data.data;
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+
+    const chartData = result.map((item) => {
+      let parsedDate = parse(item.TradingDate, 'dd/MM/yyyy', new Date());
+      const localOffsetHours = new Date().getTimezoneOffset() / 60;
+      parsedDate = addHours(parsedDate, -localOffsetHours);
+      return {
+        ticker: item.Symbol,
+        time: parsedDate,
+        market: item.Market,
+        open: item.Open,
+        high: item.High,
+        low: item.Low,
+        close: item.Close,
+        value: item.Value,
+        volume: item.Volume,
+      };
+    });
+
+    return chartData;
+  }
+
+  async getSSIIntradayChartData(ticker: string) {
+    function filterDistinctTimes(arr) {
+      const result = [];
+      for (let i = 0; i < arr.length; i++) {
+        // Kiểm tra xem phần tử hiện tại có khác với phần tử trước đó không
+        if (i === 0 || arr[i].time.getTime() !== arr[i - 1].time.getTime()) {
+          result.push(arr[i]);
+        }
+      }
+
+      return result;
+    }
+    const lookupRequest: any = {};
+    const currentDate = new Date();
+    const thirtyDaysAgo = subDays(currentDate, 30);
+    const formatDate = (date) => {
+      return format(date, 'dd/MM/yyyy');
+    };
+
+    lookupRequest.symbol = ticker;
+    lookupRequest.fromDate = formatDate(thirtyDaysAgo);
+    lookupRequest.toDate = formatDate(currentDate);
+    lookupRequest.pageIndex = 1;
+    lookupRequest.pageSize = 9999;
+    lookupRequest.ascending = true;
+    lookupRequest.endpoint = 'api/v2/Market/IntradayOhlc';
+
+    let result;
+
+    await axios
+      .get(
+        process.env.SSI_API +
+          lookupRequest.endpoint +
+          '?lookupRequest.symbol=' +
+          lookupRequest.symbol +
+          '&lookupRequest.fromDate=' +
+          lookupRequest.fromDate +
+          '&lookupRequest.toDate=' +
+          lookupRequest.toDate +
+          '&lookupRequest.pageIndex=' +
+          lookupRequest.pageIndex +
+          '&lookupRequest.pageSize=' +
+          lookupRequest.pageSize +
+          '&lookupRequest.ascending=' +
+          lookupRequest.ascending,
+        {
+          headers: {
+            Authorization: 'Bearer ' + this.token,
+          },
+        },
+      )
+      .then((response) => {
+        result = response.data.data;
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+
+    const chartData = result.map((item) => {
+      const combinedDateTimeString = item.TradingDate + ' ' + item.Time;
+      let parsedDate = parse(
+        combinedDateTimeString,
+        'dd/MM/yyyy HH:mm:ss',
+        new Date(),
+      );
+      const localOffsetHours = new Date().getTimezoneOffset() / 60;
+      parsedDate = addHours(parsedDate, -localOffsetHours);
+      return {
+        ticker: item.Symbol,
+        time: parsedDate,
+        market: item.Market,
+        open: item.Open,
+        high: item.High,
+        low: item.Low,
+        close: item.Close,
+        value: item.Value,
+        volume: item.Volume,
+      };
+    });
+
+    const filteredData = filterDistinctTimes(chartData);
+
+    return filteredData;
+  }
+
+  delay(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  async importIntradayChartData() {
+    const fetchData = async (stock) => {
+      try {
+        const result = await this.getSSIIntradayChartData(stock);
+        await this.intradayChartDataModel.bulkCreate(result);
+      } catch (e) {
+        console.log(e);
+      }
+    };
+    await this.intradayChartDataModel.truncate();
+
+    await this.getSSIAccessToken();
+    const stockList = await this.getStockList();
+    const startTime = performance.now();
+    for (const stock of stockList) {
+      fetchData(stock);
+      await this.delay(1100);
+    }
+    const endTime = performance.now();
+    const executionTime = endTime - startTime;
+    return { msg: 'imported', executionTime };
+  }
+
+  async importChartData() {
+    const fetchData = async (stock) => {
+      try {
+        const result = await this.getSSIChartData(stock, '01/01/2000');
+        await this.chartDataModel.bulkCreate(result);
+      } catch (e) {
+        console.log(e);
+      }
+    };
+    await this.chartDataModel.truncate();
+
+    await this.getSSIAccessToken();
+    const stockList = await this.getStockList();
+    const startTime = performance.now();
+    for (const stock of stockList) {
+      fetchData(stock);
+      await this.delay(1100);
+    }
+    const endTime = performance.now();
+    const executionTime = endTime - startTime;
+    return { msg: 'imported', executionTime };
+  }
+
+  async importDailyChartData() {
+    const fetchData = async (stock) => {
+      try {
+        const result = await this.getSSIChartData(stock, '');
+        await this.chartDataModel.bulkCreate(result);
+      } catch (e) {
+        console.log(e);
+      }
+    };
+    await this.chartDataModel.truncate();
+
+    await this.getSSIAccessToken();
+    const stockList = await this.getStockList();
+    const startTime = performance.now();
+    for (const stock of stockList) {
+      fetchData(stock);
+      await this.delay(1100);
+    }
+    const endTime = performance.now();
+    const executionTime = endTime - startTime;
+    return { msg: 'imported', executionTime };
+  }
+
+  async getChartData(ticker: string, timeframe: string) {
+    let chartData;
+    if (timeframe === '1d') {
+      chartData = await this.chartDataModel.findAll({
+        where: { ticker: ticker },
+        order: [['time', 'ASC']],
+      });
+    } else if (timeframe === '1m') {
+      chartData = await this.intradayChartDataModel.findAll({
+        where: { ticker: ticker },
+        order: [['time', 'ASC']],
+      });
+    }
+    console.log('tim', timeframe);
+    console.log(chartData);
+
+    return chartData;
   }
 }

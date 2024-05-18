@@ -7,13 +7,13 @@ import {
 } from 'sequelize-typescript';
 
 @Table
-export class IntradayChartdata extends Model {
+export class DailyOhlc extends Model {
   @PrimaryKey
   @Column
   ticker: string;
 
   @PrimaryKey
-  @Column
+  @Column(DataType.DATEONLY)
   time: Date;
 
   @Column

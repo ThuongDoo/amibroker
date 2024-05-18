@@ -1,13 +1,17 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { SequelizeModule } from '@nestjs/sequelize';
-import { UserModule } from './user/user.module';
-import { AuthModule } from './auth/auth.module';
-import { StockModule } from './stock/stock.module';
 import { ConfigModule } from '@nestjs/config';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { UserModule } from './user/user.module';
+import { StockModule } from './stock/stock.module';
+import { AuthModule } from './auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
+import { RolesGuard } from './shared/guard/roles.guard';
+import { BuysellModule } from './buysell/buysell.module';
+import { SequelizeModule } from '@nestjs/sequelize';
+import { EventsModule } from './events/events.module';
+import { AuthenticatedGuard } from './shared/guard/authenticated.guard';
+import { OhlcModule } from './ohlc/ohlc.module';
 
 @Module({
   imports: [
@@ -25,14 +29,25 @@ import { APP_GUARD } from '@nestjs/core';
       database: process.env.DB_DATABASE,
       models: [],
       autoLoadModels: true,
-      synchronize: true,
     }),
     UserModule,
-    AuthModule,
     StockModule,
-    ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
+    AuthModule,
+    BuysellModule,
+    EventsModule,
+    OhlcModule,
   ],
   controllers: [AppController],
-  providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
+  providers: [
+    AppService,
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: RolesGuard,
+    // },
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: AuthenticatedGuard,
+    // },
+  ],
 })
 export class AppModule {}

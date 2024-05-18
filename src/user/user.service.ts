@@ -1,55 +1,77 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/sequelize';
-import { UserRequest } from './userRequest.model';
-import { User } from './user.model';
-import { CreateUserDto } from './dto/createUser.dto';
+import { CreateUserDto } from './dto/createUserDto';
 import * as bcrypt from 'bcryptjs';
-import { UserRequestDto } from './dto/userRequest.dto';
-import { UserRole } from 'src/enum/role.enum';
+import { Request } from 'express';
+import { InjectModel } from '@nestjs/sequelize';
+import { User } from './user.model';
+import { UserRequest } from './userRequest.model';
+import { UserRequestDto } from './dto/UserRequestDto';
+import { UpdateUserDto } from './dto/updateUserDto';
 
 @Injectable()
 export class UserService {
   constructor(
-    @InjectModel(UserRequest) private userRequestModel: typeof UserRequest,
-    @InjectModel(User) private userModel: typeof User,
+    @InjectModel(User)
+    private userModel: typeof User,
+    @InjectModel(UserRequest)
+    private userRequestModel: typeof UserRequest,
   ) {}
 
-  async createUser(createUserDto: CreateUserDto) {
+  findOne(phone: string): Promise<User> {
+    return this.userModel.findOne({ where: { phone } });
+  }
+
+  async addOne(createUserDto: CreateUserDto): Promise<User> {
     const salt = await bcrypt.genSalt(10);
-    const password = await bcrypt.hash('123456', salt);
-    console.log(createUserDto);
+    const password = '123456';
+    const hashPassword = await bcrypt.hash(password, salt);
 
-    let newDate;
-    if (createUserDto.role !== UserRole.ADMIN) {
-      const today = new Date();
+    const today = new Date();
 
-      // Sao chép ngày hôm nay vào một đối tượng mới để tránh thay đổi trực tiếp
-      const futureDate = new Date(today);
+    // Sao chép ngày hôm nay vào một đối tượng mới để tránh thay đổi trực tiếp
+    const expirationDate = new Date(today);
 
-      // Cộng thêm 15 ngày vào ngày hiện tại
-      futureDate.setDate(futureDate.getDate() + createUserDto.date);
-      newDate = futureDate;
-    } else {
-      newDate = null;
-    }
+    // Cộng thêm 15 ngày vào ngày hiện tại
+    expirationDate.setDate(today.getDate() + createUserDto.date);
+
     try {
+      console.log('haha', createUserDto);
+
       const user = await this.userModel.create({
         phone: createUserDto.phone,
-        email: createUserDto.email,
         name: createUserDto.name,
-        role: createUserDto.role,
-        expirationDate: newDate,
-        password: password,
+        password: hashPassword,
+        email: createUserDto.email,
+        roles: createUserDto.roles,
+        expirationDate: expirationDate,
       });
-      return {
-        phone: user.phone,
-        role: user.role,
-        email: user.email,
-        name: user.name,
-      };
+      console.log(user);
+
+      return user;
     } catch (error) {
       throw error;
     }
+  }
+
+  async saveDeviceInfo(req: Request): Promise<void> {
+    const userData: any = req.user;
+    const deviceInfo = req.headers['user-agent'];
+
+    const user = await this.userModel.findOne({
+      where: { phone: userData.phone },
+    });
+    user.deviceInfo = deviceInfo;
+    await user.save();
+  }
+
+  async getUserRequest(): Promise<UserRequest[]> {
+    return await this.userRequestModel.findAll();
+  }
+
+  async getAllUser(): Promise<User[]> {
+    return this.userModel.findAll({
+      attributes: { exclude: ['password'] },
+    });
   }
 
   async createUserRequest(userRequestDto: UserRequestDto) {
@@ -66,24 +88,6 @@ export class UserService {
     }
   }
 
-  async getUserRequest() {
-    return this.userRequestModel.findAll();
-  }
-
-  async getAllUser() {
-    return this.userModel.findAll({
-      attributes: { exclude: ['password'] },
-    });
-  }
-
-  async getUser(phone: string) {
-    const user = await this.userModel.findOne({
-      where: { phone: phone },
-      // attributes: { exclude: ['password'] },
-    });
-    return user;
-  }
-
   async deleteUserRequest(userRequestIds: string) {
     const ids = userRequestIds.split(',').map(Number);
     console.log(ids);
@@ -95,62 +99,6 @@ export class UserService {
       return deleteCount;
     } catch (error) {
       throw error;
-    }
-  }
-
-  async login(req) {
-    const userData = req.user;
-    const user = await this.userModel.findOne({
-      where: { phone: userData.phone },
-    });
-    const deviceInfo = req.headers['user-agent'];
-    console.log(deviceInfo);
-    user.deviceInfo = deviceInfo;
-    await user.save();
-    // return { User: req.user, msg: 'user logged in' };
-
-    // console.log(req.session);
-  }
-  async addDaysToExpiration(days: number, user) {
-    if (user.expirationDate) {
-      user.expirationDate.setDate(user.expirationDate.getDate() + days);
-      await user.save();
-    }
-  }
-
-  isExpired(user): boolean {
-    console.log('expire date');
-
-    console.log(user.expirationDate);
-    if (user.expirationDate) {
-      return user.expirationDate < new Date();
-    }
-    return false; // Không hết hạn nếu expirationDate là null
-  }
-
-  async checkDeviceInfo(req) {
-    console.log(req.user);
-
-    const user: User = await this.userModel.findOne({
-      where: { phone: req.user.phone },
-    });
-
-    if (this.isExpired(user)) {
-      console.log('expire');
-
-      return false;
-    } else {
-      console.log('not expire');
-    }
-    const oldDeviceInfo = user.deviceInfo;
-    const currentDeviceInfo = req.headers['user-agent'];
-    console.log(oldDeviceInfo);
-    console.log(currentDeviceInfo);
-
-    if (oldDeviceInfo && oldDeviceInfo === currentDeviceInfo) {
-      return true;
-    } else {
-      return false;
     }
   }
 
@@ -201,7 +149,7 @@ export class UserService {
     throw new BadRequestException('incorrect password');
   }
 
-  async updateUser(createUserDto: CreateUserDto) {
+  async updateUser(createUserDto: UpdateUserDto) {
     const user = await this.userModel.findOne({
       where: { phone: createUserDto.phone },
     });
@@ -218,12 +166,13 @@ export class UserService {
       } else {
         futureDate.setDate(today.getDate() + createUserDto.date);
       }
-
-      console.log(futureDate);
+      console.log(today, futureDate);
 
       await user.update({
         name: createUserDto.name,
         email: createUserDto.email,
+        phone: createUserDto.phone,
+        password: createUserDto.password,
         expirationDate: futureDate,
       });
     } catch (error) {
@@ -231,10 +180,16 @@ export class UserService {
     }
   }
 
-  async deleteUser(phone: string) {
-    const deleteCount = await this.userModel.destroy({
-      where: { phone: phone },
-    });
-    return deleteCount;
+  async deleteUser(phones: string) {
+    const ids = phones.split(',').map(Number);
+
+    try {
+      const deleteCount = await this.userModel.destroy({
+        where: { phone: ids },
+      });
+      return deleteCount;
+    } catch (error) {
+      throw error;
+    }
   }
 }

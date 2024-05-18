@@ -7,7 +7,11 @@ import {
   Table,
   Unique,
 } from 'sequelize-typescript';
-import { UserRole } from 'src/enum/role.enum';
+
+export enum UserRole {
+  ADMIN = 'admin',
+  STOCK1 = 'stock1',
+}
 
 @Table
 export class User extends Model {
@@ -29,9 +33,9 @@ export class User extends Model {
   @Column({
     type: DataType.ENUM,
     values: Object.values(UserRole),
-    defaultValue: UserRole.STOCK1,
+    defaultValue: [UserRole.STOCK1],
   })
-  role: UserRole;
+  roles: UserRole[];
 
   @Column
   deviceInfo: string;

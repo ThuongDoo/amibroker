@@ -7,41 +7,19 @@ import {
   Patch,
   Post,
   Request,
-  UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto } from './dto/createUser.dto';
-import { UserRequestDto } from './dto/userRequest.dto';
-import { LocalAuthGuard } from 'src/auth/guard/local.auth.guard';
-import { AuthenticatedGuard } from 'src/auth/guard/authenticated.guard';
-import { UserRole } from 'src/enum/role.enum';
+import { UserRequestDto } from './dto/UserRequestDto';
+import { CreateUserDto } from './dto/createUserDto';
+import { UserRole } from './user.model';
+import { UpdateUserDto } from './dto/updateUserDto';
 
 @Controller('user')
 export class UserController {
   constructor(private userService: UserService) {}
 
-  @UseGuards(LocalAuthGuard)
-  @Post('/login')
-  login(@Request() req): any {
-    // console.log(req.session);
-
-    // return { User: req.user, msg: 'user logged in' };
-    return this.userService.login(req);
-  }
-
-  @Get('/logout')
-  logout(@Request() req): any {
-    req.session.destroy();
-    return { msg: 'the user session has ended' };
-  }
-
-  @Post()
-  createUser(@Body() createUserDto: CreateUserDto) {
-    return this.userService.createUser(createUserDto);
-  }
-
   @Get()
-  getUser() {
+  findAll() {
     return this.userService.getAllUser();
   }
 
@@ -66,28 +44,17 @@ export class UserController {
       phone: '0333817395',
       email: 'domanhthuong20122002@gmail.com',
       name: 'admin Thuong',
-      role: UserRole.ADMIN,
+      roles: UserRole.ADMIN,
       date: null,
     };
-    const createUser = this.userService.createUser(user);
+    const createUser = this.userService.addOne(user);
     // delete
     console.log(createUser);
 
     return { msg: 'success' };
   }
 
-  @UseGuards(AuthenticatedGuard)
-  @Get('/protected')
-  getHello(@Request() req): string {
-    //delete
-    console.log(req.user);
-
-    return 'hohohoho';
-    // return req.user;
-  }
-
   // @Roles(UserRole.ADMIN)
-  @UseGuards(AuthenticatedGuard)
   @Get('/admin')
   getAdmin(@Request() req): string {
     console.log('admin');
@@ -125,7 +92,7 @@ export class UserController {
   }
 
   @Patch('/updateUser')
-  updateUser(@Body() data: CreateUserDto) {
+  updateUser(@Body() data: UpdateUserDto) {
     return this.userService.updateUser(data);
   }
 

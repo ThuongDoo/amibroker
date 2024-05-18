@@ -1,13 +1,24 @@
-import { Module, forwardRef } from '@nestjs/common';
-import { StockController } from './stock.controller';
+import { Module } from '@nestjs/common';
 import { StockService } from './stock.service';
-import { EventsModule } from 'src/events/events.module';
-import { AuthModule } from 'src/auth/auth.module';
+import { StockController } from './stock.controller';
+import { EventsGateway } from 'src/events/events.gateway';
+import { SequelizeModule } from '@nestjs/sequelize';
+import { Buysell } from './buysell.model';
+import { StockBuySell } from './stockBuysell.model';
+import { ChartData } from './chartData.model';
+import { IntradayChartdata } from './intradayChartData.model';
 
 @Module({
-  imports: [forwardRef(() => EventsModule), AuthModule],
+  imports: [
+    SequelizeModule.forFeature([
+      Buysell,
+      StockBuySell,
+      ChartData,
+      IntradayChartdata,
+    ]),
+  ],
+  providers: [StockService, EventsGateway],
   controllers: [StockController],
-  providers: [StockService],
   exports: [StockService],
 })
 export class StockModule {}

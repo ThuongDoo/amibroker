@@ -10,7 +10,6 @@ import {} from '@nestjs/platform-socket.io';
 import { Server, Socket } from 'socket.io';
 import { StockService } from 'src/stock/stock.service';
 import { Inject, Logger, forwardRef } from '@nestjs/common';
-import { BuysellService } from 'src/buysell/buysell.service';
 
 @WebSocketGateway({
   cors: {
@@ -25,21 +24,26 @@ export class EventsGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   constructor(
-    @Inject(forwardRef(() => StockService))
-    private readonly stockService: StockService,
-
-    @Inject(forwardRef(() => BuysellService))
-    private readonly buysellService: BuysellService,
+    @Inject(forwardRef(() => StockService)) private stockService: StockService,
   ) {}
 
   private logger: Logger = new Logger('AppGateway');
   @WebSocketServer() server: Server;
-  @SubscribeMessage('stock_request')
+  @SubscribeMessage('updateStockRequest')
   async handleUpdateStock(client: Socket, payload: any) {
     const data = await this.stockService.getStockByName(payload);
     this.logger.log(`Data send to client: ${data.length}`);
+
     const sanData = this.stockService.getSan();
-    client.emit('update_stock_data', { data, sanData });
+
+    client.emit('updateStock', { data, sanData });
+  }
+
+  @SubscribeMessage('updateFilterRequest')
+  async handleUpdateFilter(client: Socket, payload: any) {
+    const data = await this.stockService.getFilter(payload);
+    this.logger.log(`Update Filter to client: ${data.length}`);
+    client.emit('updateFilter', { data });
   }
 
   afterInit(server: Server) {
@@ -54,15 +58,20 @@ export class EventsGateway
     console.log(args);
   }
 
+  // async sendStockToAllClients(data: any) {
+  //   const realtimeData = this.stockService.getBuysellProfitRealtime();
+  //   this.server.emit('stock', { data: data, realtimeData });
+  // }
   async sendStockUpdateSignal() {
     this.logger.log(`Emit stock update signal`);
-    this.server.emit('new_stock_data_available', true);
+
+    this.server.emit('stockUpdated', true);
   }
 
-  async sendBuysellToClient(data: any) {
+  async sendBuysellToAllClients(data: any) {
     // const realtimeData = await this.stockService.getBuysellProfitRealtime();
     this.logger.log(`Emit buy sell to client`);
 
-    this.server.emit('update_buysell_data', { data: data });
+    this.server.emit('buysell', { data: data });
   }
 }

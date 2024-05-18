@@ -6,28 +6,13 @@ export class Buysell extends Model {
   ticker: string;
 
   @Column(DataType.DATEONLY)
-  knTime: Date;
-
-  @Column(DataType.DATEONLY)
-  sellTime: Date;
-
-  @Column(DataType.DATEONLY)
-  sortTime: Date;
+  date: Date;
 
   @Column(DataType.FLOAT)
-  buyPrice: number;
-
-  @Column(DataType.FLOAT)
-  sellPrice: number;
+  price: number;
 
   @Column(DataType.FLOAT)
   profit: number;
-
-  @Column
-  holdingDuration: number;
-
-  @Column
-  risk: string;
 
   @Column
   status: number;

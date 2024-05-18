@@ -160,6 +160,10 @@ export class UserService {
     const user = await this.userModel.findOne({
       where: { phone: createUserDto.phone },
     });
+    if (createUserDto.password) {
+      const salt = await bcrypt.genSalt(10);
+      createUserDto.password = await bcrypt.hash(createUserDto.password, salt);
+    }
     if (!user) {
       throw new BadRequestException('user not found');
     }

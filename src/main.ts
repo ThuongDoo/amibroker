@@ -1,30 +1,32 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as session from 'express-session';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import * as passport from 'passport';
-// import * as csurf from 'csurf';
-import helmet from 'helmet';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // TODO: prodution
+  // app.set('trust proxy', 1);
+  app.setGlobalPrefix('api/v1');
+
   app.use(
     session({
-      secret: 'mysecretkey',
+      // TODO: change secret
+      secret: 'my-secret',
       resave: false,
       saveUninitialized: false,
+      // TODO: prodution
+      // cookie: { secure: true },
     }),
   );
   app.use(passport.initialize());
   app.use(passport.session());
-  app.use(helmet());
-  app.setGlobalPrefix('api/v1');
   app.enableCors({
     origin: ['*', 'http://localhost:3001'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
-  // app.use(csurf());
-
   await app.listen(3000);
 }
 bootstrap();

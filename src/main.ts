@@ -14,7 +14,7 @@ async function bootstrap() {
   app.use(
     session({
       // TODO: change secret
-      secret: 'my-secret',
+      secret: 'mysecretkey',
       resave: false,
       saveUninitialized: false,
       // TODO: prodution

@@ -11,7 +11,6 @@ export class AuthenticatedGuard implements CanActivate {
   constructor(private readonly authService: AuthService) {}
   async canActivate(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest();
-    console.log('hlhl');
 
     const isAuthenticated = request.isAuthenticated;
     if (isAuthenticated) {

@@ -8,6 +8,8 @@ import { StockModule } from './stock/stock.module';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { BuysellModule } from './buysell/buysell.module';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -31,6 +33,8 @@ import { APP_GUARD } from '@nestjs/core';
     AuthModule,
     StockModule,
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
+    BuysellModule,
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],

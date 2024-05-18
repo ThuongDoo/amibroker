@@ -7,8 +7,9 @@ export class LocalAuthGuard extends AuthGuard('local') {
     const result = (await super.canActivate(context)) as boolean;
     const request = context.switchToHttp().getRequest();
 
-    await super.logIn(request);
+    // trigger session
 
+    await super.logIn(request);
     return result;
   }
 }

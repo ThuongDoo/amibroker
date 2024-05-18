@@ -1,7 +1,6 @@
 import { IsEmail, IsNumber, IsString } from 'class-validator';
-import { UserRole } from '../user.model';
 
-export class CreateUserDto {
+export class UpdateUserDto {
   @IsString()
   phone: string;
 
@@ -12,7 +11,7 @@ export class CreateUserDto {
   name: string;
 
   @IsString()
-  roles: UserRole;
+  password: string;
 
   @IsNumber()
   date: number;

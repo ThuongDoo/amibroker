@@ -1,57 +1,118 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/sequelize";
-import { UserRequest } from "./userRequest.model";
-import { User } from "./user.model";
-import { CreateUserDto } from "./dto/createUser.dto";
-import * as bcrypt from "bcryptjs";
-import { UserRequestDto } from "./dto/userRequest.dto";
-import { UserRole } from "src/enum/role.enum";
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { CreateUserDto } from './dto/createUser.dto';
+import * as bcrypt from 'bcryptjs';
+import { Request } from 'express';
+import { InjectModel } from '@nestjs/sequelize';
+import { User } from './user.model';
+import { UserRequest } from './userRequest.model';
+import { UserRequestDto } from './dto/userRequest.dto';
+import { UpdateUserDto } from './dto/updateUser.dto';
 
 @Injectable()
 export class UserService {
   constructor(
+    @InjectModel(User)
+    private userModel: typeof User,
     @InjectModel(UserRequest)
     private userRequestModel: typeof UserRequest,
-    @InjectModel(User)
-    private userModel: typeof User
   ) {}
 
-  async createUser(createUserDto: CreateUserDto) {
+  findAll(): Promise<User[]> {
+    return this.userModel.findAll();
+  }
+
+  findOne(phone: string): Promise<User> {
+    return this.userModel.findOne({ where: { phone } });
+  }
+
+  async addOne(createUserDto: CreateUserDto): Promise<any> {
     const salt = await bcrypt.genSalt(10);
-    const password = await bcrypt.hash("123456", salt);
-    console.log(createUserDto);
-
-    let newDate;
-    if (createUserDto.role !== UserRole.ADMIN) {
-      const today = new Date();
-
-      // Sao chép ngày hôm nay vào một đối tượng mới để tránh thay đổi trực tiếp
-      const futureDate = new Date(today);
-
-      // Cộng thêm 15 ngày vào ngày hiện tại
-      futureDate.setDate(futureDate.getDate() + createUserDto.date);
-      newDate = futureDate;
-    } else {
-      newDate = null;
-    }
+    const password = '123456';
+    const hashPassword = await bcrypt.hash(password, salt);
     try {
+      console.log('haha', createUserDto);
+
       const user = await this.userModel.create({
         phone: createUserDto.phone,
-        email: createUserDto.email,
         name: createUserDto.name,
-        role: createUserDto.role,
-        expirationDate: newDate,
-        password: password,
+        password: hashPassword,
+        email: createUserDto.email,
+        roles: createUserDto.roles,
       });
-      return {
-        phone: user.phone,
-        role: user.role,
-        email: user.email,
-        name: user.name,
-      };
+      console.log(user);
+
+      return user;
     } catch (error) {
       throw error;
     }
+  }
+
+  async saveDeviceInfo(req: Request) {
+    const userData: any = req.user;
+    const deviceInfo = req.headers['user-agent'];
+
+    const user = await this.userModel.findOne({
+      where: { phone: userData.phone },
+    });
+    user.deviceInfo = deviceInfo;
+    await user.save();
+  }
+
+  async getUserRequest() {
+    return this.userRequestModel.findAll();
+  }
+
+  async getAllUser() {
+    return this.userModel.findAll({
+      attributes: { exclude: ['password'] },
+    });
+  }
+
+  async changePassword(
+    phone: string,
+    newPassword: string,
+    confirmPassword: string,
+  ) {
+    const user = await this.userModel.findOne({ where: { phone: phone } });
+    if (!user) {
+      throw new BadRequestException('no user');
+    }
+
+    const isPasswordCorrect = await bcrypt.compare(
+      confirmPassword,
+      user.password,
+    );
+    console.log(isPasswordCorrect);
+
+    if (isPasswordCorrect) {
+      const salt = await bcrypt.genSalt(10);
+      const password = await bcrypt.hash(newPassword, salt);
+      user.password = password;
+      await user.save();
+      return { msg: 'change password success' };
+    }
+    throw new BadRequestException('incorrect password');
+  }
+
+  async resetPassword(phone: string) {
+    const salt = await bcrypt.genSalt(10);
+    const password = await bcrypt.hash('123456', salt);
+    const user = await this.userModel.findOne({ where: { phone: phone } });
+    if (user) {
+      user.password = password;
+      await user.save();
+
+      return { msg: 'thay doi mat khau thanh cong' };
+    }
+    return { msg: 'user khong ton tai' };
+  }
+
+  async showMe(req) {
+    const { phone } = req.user;
+    return await this.userModel.findOne({
+      where: { phone: phone },
+      attributes: { exclude: ['password'] },
+    });
   }
 
   async createUserRequest(userRequestDto: UserRequestDto) {
@@ -68,26 +129,21 @@ export class UserService {
     }
   }
 
-  async getUserRequest() {
-    return this.userRequestModel.findAll();
-  }
+  async deleteUser(phones: string) {
+    const ids = phones.split(',').map(Number);
 
-  async getAllUser() {
-    return this.userModel.findAll({
-      attributes: { exclude: ["password"] },
-    });
-  }
-
-  async getUser(phone: string) {
-    const user = await this.userModel.findOne({
-      where: { phone: phone },
-      // attributes: { exclude: ['password'] },
-    });
-    return user;
+    try {
+      const deleteCount = await this.userModel.destroy({
+        where: { phone: ids },
+      });
+      return deleteCount;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async deleteUserRequest(userRequestIds: string) {
-    const ids = userRequestIds.split(",").map(Number);
+    const ids = userRequestIds.split(',').map(Number);
     console.log(ids);
 
     try {
@@ -100,115 +156,12 @@ export class UserService {
     }
   }
 
-  async login(req) {
-    const userData = req.user;
-    const user = await this.userModel.findOne({
-      where: { phone: userData.phone },
-    });
-    const deviceInfo = req.headers["user-agent"];
-    console.log(deviceInfo);
-    user.deviceInfo = deviceInfo;
-    await user.save();
-    // return { User: req.user, msg: 'user logged in' };
-
-    // console.log(req.session);
-  }
-  async addDaysToExpiration(days: number, user) {
-    if (user.expirationDate) {
-      user.expirationDate.setDate(user.expirationDate.getDate() + days);
-      await user.save();
-    }
-  }
-
-  isExpired(user): boolean {
-    console.log("expire date");
-
-    console.log(user.expirationDate);
-    if (user.expirationDate) {
-      return user.expirationDate < new Date();
-    }
-    return false; // Không hết hạn nếu expirationDate là null
-  }
-
-  async checkDeviceInfo(req) {
-    console.log(req.user);
-
-    const user: User = await this.userModel.findOne({
-      where: { phone: req.user.phone },
-    });
-
-    if (this.isExpired(user)) {
-      console.log("expire");
-
-      return false;
-    } else {
-      console.log("not expire");
-    }
-    const oldDeviceInfo = user.deviceInfo;
-    const currentDeviceInfo = req.headers["user-agent"];
-    console.log(oldDeviceInfo);
-    console.log(currentDeviceInfo);
-
-    if (oldDeviceInfo && oldDeviceInfo === currentDeviceInfo) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  async showMe(req) {
-    const { phone } = req.user;
-    return await this.userModel.findOne({
-      where: { phone: phone },
-      attributes: { exclude: ["password"] },
-    });
-  }
-
-  async resetPassword(phone: string) {
-    const salt = await bcrypt.genSalt(10);
-    const password = await bcrypt.hash("123456", salt);
-    const user = await this.userModel.findOne({ where: { phone: phone } });
-    if (user) {
-      user.password = password;
-      await user.save();
-
-      return { msg: "thay doi mat khau thanh cong" };
-    }
-    return { msg: "user khong ton tai" };
-  }
-
-  async changePassword(
-    phone: string,
-    newPassword: string,
-    confirmPassword: string
-  ) {
-    const user = await this.userModel.findOne({ where: { phone: phone } });
-    if (!user) {
-      throw new BadRequestException("no user");
-    }
-
-    const isPasswordCorrect = await bcrypt.compare(
-      confirmPassword,
-      user.password
-    );
-    console.log(isPasswordCorrect);
-
-    if (isPasswordCorrect) {
-      const salt = await bcrypt.genSalt(10);
-      const password = await bcrypt.hash(newPassword, salt);
-      user.password = password;
-      await user.save();
-      return { msg: "change password success" };
-    }
-    throw new BadRequestException("incorrect password");
-  }
-
-  async updateUser(createUserDto: CreateUserDto) {
+  async updateUser(createUserDto: UpdateUserDto) {
     const user = await this.userModel.findOne({
       where: { phone: createUserDto.phone },
     });
     if (!user) {
-      throw new BadRequestException("user not found");
+      throw new BadRequestException('user not found');
     }
     try {
       const today = new Date();
@@ -226,17 +179,12 @@ export class UserService {
       await user.update({
         name: createUserDto.name,
         email: createUserDto.email,
+        phone: createUserDto.phone,
+        password: createUserDto.password,
         expirationDate: futureDate,
       });
     } catch (error) {
-      throw new BadRequestException("update failed");
+      throw new BadRequestException('update failed');
     }
-  }
-
-  async deleteUser(phone: string) {
-    const deleteCount = await this.userModel.destroy({
-      where: { phone: phone },
-    });
-    return deleteCount;
   }
 }

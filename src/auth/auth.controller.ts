@@ -10,6 +10,7 @@ import { AuthService } from './auth.service';
 import { LocalAuthGuard } from '../shared/guard/local-auth.guard';
 import { CreateUserDto } from 'src/user/dto/createUser.dto';
 import { UserService } from 'src/user/user.service';
+import { Public } from 'src/shared/decorator/public.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -18,6 +19,7 @@ export class AuthController {
     private userService: UserService,
   ) {}
 
+  @Public()
   @UseGuards(LocalAuthGuard)
   @Post('/login')
   login(@Request() req): any {

@@ -12,6 +12,7 @@ import { BuysellModule } from './buysell/buysell.module';
 import { EventsModule } from './events/events.module';
 import { AuthenticatedGuard } from './shared/guard/authenticated.guard';
 import { RolesGuard } from './shared/guard/roles.guard';
+import { OhlcModule } from './ohlc/ohlc.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { RolesGuard } from './shared/guard/roles.guard';
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
     BuysellModule,
     EventsModule,
+    OhlcModule,
   ],
   controllers: [AppController],
   providers: [

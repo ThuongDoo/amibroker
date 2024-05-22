@@ -35,7 +35,7 @@ import { OhlcModule } from './ohlc/ohlc.module';
     UserModule,
     AuthModule,
     StockModule,
-    ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
     BuysellModule,
     EventsModule,
     OhlcModule,
@@ -44,8 +44,8 @@ import { OhlcModule } from './ohlc/ohlc.module';
   providers: [
     AppService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
-    // { provide: APP_GUARD, useClass: AuthenticatedGuard },
-    // { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_GUARD, useClass: AuthenticatedGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
 export class AppModule {}

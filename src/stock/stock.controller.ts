@@ -6,8 +6,11 @@ import { Public } from 'src/shared/decorator/public.decorator';
 export class StockController {
   constructor(private stockService: StockService) {}
 
+  @Public()
   @Post()
   updateStock(@Body() data) {
+    console.log('update');
+
     return this.stockService.updateStock(data);
   }
 

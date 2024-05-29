@@ -1,18 +1,14 @@
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
-import { InjectModel } from '@nestjs/sequelize';
 import { EventsGateway } from 'src/events/events.gateway';
 import { Utils } from 'src/shared/utils/utils';
-import { Roc } from './roc.model';
-import { Op } from 'sequelize';
-import { CATEGORIES } from 'src/shared/utils/contants';
+import { OhlcService } from 'src/ohlc/ohlc.service';
 
 @Injectable()
 export class StockService {
   constructor(
     @Inject(forwardRef(() => EventsGateway))
     private readonly eventsGateway: EventsGateway,
-    @InjectModel(Roc)
-    private rocModel: typeof Roc,
+    private ohlcService: OhlcService,
   ) {}
 
   // stocksData = [];
@@ -191,6 +187,9 @@ export class StockService {
     this.tempData = [];
     this.stockSan = await this.formatSan();
 
+    this.ohlcService.updateDaily(this.stocksData);
+    this.ohlcService.updateIntraday(this.stocksData);
+
     await this.eventsGateway.sendStockUpdateSignal();
   }
 
@@ -297,119 +296,5 @@ export class StockService {
       };
     });
     return newResult;
-  }
-
-  async importRoc(data: any): Promise<any> {
-    if (data[data.length - 1]?.header === 'done') {
-      const pushData = data.slice(0, data.length - 1);
-      this.roc.push(...pushData);
-      const newData = this.formatRocData(this.roc).flat();
-      console.log(newData);
-
-      this.roc = [];
-      try {
-        await this.rocModel.truncate();
-        const chunkSize = 2000; // Số lượng mục mỗi chunk
-        const totalData = newData.length;
-        let startIndex = 0;
-        let results = [];
-        while (startIndex < totalData) {
-          const chunkData = newData.slice(startIndex, startIndex + chunkSize);
-          const chunkResults = await this.rocModel.bulkCreate(chunkData, {
-            ignoreDuplicates: true,
-          });
-          results = results.concat(chunkResults);
-          startIndex += chunkSize;
-        }
-        console.log('imported file length: ', results.length);
-        return results;
-      } catch (error) {
-        throw error;
-      }
-    } else {
-      this.roc.push(...data);
-    }
-  }
-
-  async getRoc() {
-    const data = await this.rocModel.findAll({
-      where: {
-        time: {
-          [Op.gt]: new Date('2020-01-01'),
-        },
-      },
-      order: [['time', 'ASC']],
-    });
-    return data;
-  }
-
-  formatRocData = (data) => {
-    const categorizedStocks = this.stockToCategoryMap(data);
-    const averageStocksByTime = categorizedStocks.map((item) => {
-      const roc = this.groupAndAverageStocksByTime(item);
-      return roc;
-    });
-
-    return averageStocksByTime;
-  };
-
-  groupAndAverageStocksByTime(item) {
-    const timeMap = {};
-
-    // Group stocks by time and accumulate their values
-    item.data.forEach((stock) => {
-      const { time, value } = stock;
-      if (!timeMap[time]) {
-        timeMap[time] = { totalRoc: 0, count: 0 };
-      }
-      timeMap[time].totalRoc += value;
-      timeMap[time].count += 1;
-    });
-
-    // Calculate the average value for each time period
-    const aggregatedStocks = [];
-    for (const time in timeMap) {
-      if (timeMap.hasOwnProperty(time)) {
-        const { totalRoc, count } = timeMap[time];
-        const value = totalRoc / count;
-        aggregatedStocks.push({
-          category: item.category,
-          displayName: item.data[0].displayName,
-          time,
-          value,
-        });
-      }
-    }
-
-    return aggregatedStocks;
-  }
-
-  stockToCategoryMap(stocks) {
-    const categorizedStocksByCategory = {};
-
-    // Khởi tạo các danh mục rỗng trong đối tượng kết quả
-    CATEGORIES.forEach((category) => {
-      categorizedStocksByCategory[category.name] = [];
-    });
-
-    // Phân loại các phần tử của mảng
-    stocks.forEach((stock) => {
-      CATEGORIES.forEach((category) => {
-        if (category.stocks.includes(stock.ticker)) {
-          categorizedStocksByCategory[category.name].push({
-            ...stock,
-            displayName: category.displayName,
-          });
-        }
-      });
-    });
-    const arrayFromObject = Object.entries(categorizedStocksByCategory).map(
-      ([category, data]) => ({
-        category,
-        data,
-      }),
-    );
-
-    return arrayFromObject;
   }
 }

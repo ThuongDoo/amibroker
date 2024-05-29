@@ -3,15 +3,10 @@ import { StockController } from './stock.controller';
 import { StockService } from './stock.service';
 import { EventsModule } from 'src/events/events.module';
 import { AuthModule } from 'src/auth/auth.module';
-import { SequelizeModule } from '@nestjs/sequelize';
-import { Roc } from './roc.model';
+import { OhlcModule } from 'src/ohlc/ohlc.module';
 
 @Module({
-  imports: [
-    forwardRef(() => EventsModule),
-    AuthModule,
-    SequelizeModule.forFeature([Roc]),
-  ],
+  imports: [forwardRef(() => EventsModule), AuthModule, OhlcModule],
   controllers: [StockController],
   providers: [StockService],
   exports: [StockService],

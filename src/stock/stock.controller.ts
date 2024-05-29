@@ -38,21 +38,4 @@ export class StockController {
   filter(@Body() filterParam: any) {
     return this.stockService.getFilter(filterParam);
   }
-
-  @SkipThrottle()
-  @Post('/roc')
-  importRoc(@Body() data: any) {
-    return this.stockService.importRoc(data);
-  }
-
-  // @Get('/roc/:categories')
-  // getRoc(@Param('categories') categories: string) {
-  //   const categoriesArray = categories.split(',');
-  //   return this.stockService.getRoc(categoriesArray);
-  // }
-
-  @Get('/roc')
-  getRoc() {
-    return this.stockService.getRoc();
-  }
 }

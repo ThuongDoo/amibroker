@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { OhlcService } from './ohlc.service';
 import { SkipThrottle } from '@nestjs/throttler';
 
@@ -26,5 +26,12 @@ export class OhlcController {
   @Post('/intraday/import')
   async importIntradayChartData(@Body() data) {
     return await this.ohlcService.importIntraday(data);
+  }
+
+  @Get('/roc/:timeRange')
+  async getRoc(@Param('timeRange') timeRange: string) {
+    console.log(timeRange);
+
+    return await this.ohlcService.getRoc(timeRange);
   }
 }

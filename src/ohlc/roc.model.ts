@@ -13,7 +13,7 @@ export class Roc extends Model {
   category: string;
 
   @PrimaryKey
-  @Column(DataType.DATE)
+  @Column(DataType.DATEONLY)
   time: Date;
 
   @Column

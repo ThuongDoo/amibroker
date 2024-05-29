@@ -1,7 +1,4 @@
 import {
-  BeforeBulkCreate,
-  BeforeCreate,
-  BeforeUpdate,
   Column,
   DataType,
   Model,

@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { DailyOhlc } from './dailyOhlc.model';
 import { IntradayOhlc } from './intradayOhlc.model';
-import { startOfDay } from 'date-fns';
 
 @Injectable()
 export class OhlcService {
@@ -13,32 +12,73 @@ export class OhlcService {
     private intradayOhlcModel: typeof IntradayOhlc,
   ) {}
 
-  async importDaily(data: any): Promise<void> {
-    const randomOhlcs = await this.getRandomDailyOhlc(1000, 'SSI', 'hose');
-    try {
-      await this.dailyOhlcModel.truncate();
-      const ohlcs = await this.dailyOhlcModel.bulkCreate(randomOhlcs, {
-        ignoreDuplicates: true,
-      });
-      console.log(ohlcs);
-    } catch (error) {
-      console.log(error);
+  dailyOhlcImported = [];
+  intradayOhlcImported = [];
+
+  async importDaily(data: any): Promise<any> {
+    if (data[data.length - 1]?.header === 'done') {
+      const pushData = data.slice(0, data.length - 1);
+      this.dailyOhlcImported.push(...pushData);
+      const newData = this.dailyOhlcImported;
+      this.dailyOhlcImported = [];
+      try {
+        await this.dailyOhlcModel.truncate();
+        const chunkSize = 2000; // Số lượng mục mỗi chunk
+        const totalData = newData.length;
+        let startIndex = 0;
+        let results = [];
+
+        while (startIndex < totalData) {
+          const chunkData = newData.slice(startIndex, startIndex + chunkSize);
+          const chunkResults = await this.dailyOhlcModel.bulkCreate(chunkData, {
+            ignoreDuplicates: true,
+          });
+          results = results.concat(chunkResults);
+          startIndex += chunkSize;
+        }
+
+        console.log('imported file length: ', results.length);
+        return results;
+      } catch (error) {
+        throw error;
+      }
+    } else {
+      this.dailyOhlcImported.push(...data);
     }
   }
 
-  async importIntraday(data: any): Promise<void> {
-    const randomOhlcs = await this.getRandomDailyOhlc(10000, 'SSI', 'HOSE');
-    await this.removeSecondsBulk(randomOhlcs);
-    console.log(randomOhlcs);
+  async importIntraday(data: any): Promise<any> {
+    if (data[data.length - 1]?.header === 'done') {
+      const pushData = data.slice(0, data.length - 1);
+      this.intradayOhlcImported.push(...pushData);
+      const newData = this.intradayOhlcImported;
+      this.intradayOhlcImported = [];
+      try {
+        await this.intradayOhlcModel.truncate();
+        const chunkSize = 2000; // Số lượng mục mỗi chunk
+        const totalData = newData.length;
+        let startIndex = 0;
+        let results = [];
 
-    try {
-      await this.intradayOhlcModel.truncate();
-      const ohlcs = await this.intradayOhlcModel.bulkCreate(randomOhlcs, {
-        ignoreDuplicates: true,
-      });
-      console.log(ohlcs.length);
-    } catch (error) {
-      console.log(error);
+        while (startIndex < totalData) {
+          const chunkData = newData.slice(startIndex, startIndex + chunkSize);
+          const chunkResults = await this.intradayOhlcModel.bulkCreate(
+            chunkData,
+            {
+              ignoreDuplicates: true,
+            },
+          );
+          results = results.concat(chunkResults);
+          startIndex += chunkSize;
+        }
+
+        console.log('imported file length: ', results.length);
+        return results;
+      } catch (error) {
+        throw error;
+      }
+    } else {
+      this.intradayOhlcImported.push(...data);
     }
   }
 
@@ -72,42 +112,5 @@ export class OhlcService {
     const newTime = new Date(time);
     newTime.setSeconds(0, 0); // Đặt giây và mili giây thành 0
     return newTime;
-  }
-
-  //TODO: delete
-  getRandomDateInRange() {
-    const startDate = new Date(2024, 5, 20); // Ngày bắt đầu
-    const endDate = new Date();
-    const startTime = startOfDay(startDate).getTime();
-    const endTime = startOfDay(endDate).getTime();
-
-    const randomTime = startTime + Math.random() * (endTime - startTime);
-    return new Date(randomTime);
-  }
-
-  async getRandomDailyOhlc(quantity: number, ticker: string, market: string) {
-    const ohlcs = [];
-    for (let i = 0; i < quantity; i++) {
-      const ohlc = {
-        ticker,
-        time: this.getRandomDateInRange(),
-        market,
-        open: this.getRandomFloat(),
-        high: this.getRandomFloat(),
-        low: this.getRandomFloat(),
-        close: this.getRandomFloat(),
-        value: this.getRandomFloat(),
-        volume: this.getRandomFloat(),
-      };
-      ohlcs.push(ohlc);
-    }
-    return ohlcs;
-  }
-
-  getRandomFloat() {
-    const min = 10,
-      max = 100;
-
-    return Number((Math.random() * (max - min) + min).toFixed(2));
   }
 }

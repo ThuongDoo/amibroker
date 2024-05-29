@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { OhlcService } from './ohlc.service';
+import { SkipThrottle } from '@nestjs/throttler';
 
 @Controller('ohlc')
 export class OhlcController {
@@ -10,7 +11,8 @@ export class OhlcController {
     return await this.ohlcService.getDaily(ticker);
   }
 
-  @Get('/daily/import')
+  @SkipThrottle()
+  @Post('/daily/import')
   importChartData(@Body() data) {
     return this.ohlcService.importDaily(data);
   }
@@ -20,7 +22,8 @@ export class OhlcController {
     return await this.ohlcService.getIntraday(ticker);
   }
 
-  @Get('/intraday/import')
+  @SkipThrottle()
+  @Post('/intraday/import')
   async importIntradayChartData(@Body() data) {
     return await this.ohlcService.importIntraday(data);
   }

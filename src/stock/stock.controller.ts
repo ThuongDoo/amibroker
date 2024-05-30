@@ -1,7 +1,6 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { StockService } from './stock.service';
 import { Public } from 'src/shared/decorator/public.decorator';
-import { SkipThrottle } from '@nestjs/throttler';
 
 @Controller('stock')
 export class StockController {

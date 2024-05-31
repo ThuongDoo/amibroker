@@ -301,6 +301,7 @@ export class StockService {
 
   async test() {
     // console.log(process.env.SSIApiUrl);
+    let result = 'nothing';
 
     await api
       .post(endpoints.GET_ACCESS_TOKEN, {
@@ -308,10 +309,11 @@ export class StockService {
         consumerSecret: process.env.SSIConsumerSecret,
       })
       .then((res) => {
-        return res.data.data.accessToken;
+        result = res.data.data.accessToken;
       })
       .catch((e) => {
         throw e;
       });
+    return result;
   }
 }

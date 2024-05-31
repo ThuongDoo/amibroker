@@ -2,6 +2,7 @@ import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { EventsGateway } from 'src/events/events.gateway';
 import { Utils } from 'src/shared/utils/utils';
 import { OhlcService } from 'src/ohlc/ohlc.service';
+import api, { endpoints } from '../shared/utils/api';
 
 @Injectable()
 export class StockService {
@@ -296,5 +297,21 @@ export class StockService {
       };
     });
     return newResult;
+  }
+
+  async test() {
+    // console.log(process.env.SSIApiUrl);
+
+    await api
+      .post(endpoints.GET_ACCESS_TOKEN, {
+        consumerID: process.env.SSIConsumerId,
+        consumerSecret: process.env.SSIConsumerSecret,
+      })
+      .then((res) => {
+        return res.data.data.accessToken;
+      })
+      .catch((e) => {
+        throw e;
+      });
   }
 }

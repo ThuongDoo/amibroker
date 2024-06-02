@@ -37,10 +37,4 @@ export class StockController {
   filter(@Body() filterParam: any) {
     return this.stockService.getFilter(filterParam);
   }
-
-  //TODO: delete
-  @Get('test')
-  async test() {
-    return await this.stockService.test();
-  }
 }

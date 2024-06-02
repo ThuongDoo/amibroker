@@ -13,6 +13,13 @@ import { EventsModule } from './events/events.module';
 import { AuthenticatedGuard } from './shared/guard/authenticated.guard';
 import { RolesGuard } from './shared/guard/roles.guard';
 import { OhlcModule } from './ohlc/ohlc.module';
+import { Buysell } from './buysell/buysell.model';
+import { DailyOhlc } from './ohlc/dailyOhlc.model';
+import { IntradayOhlc } from './ohlc/intradayOhlc.model';
+import { User } from './user/user.model';
+import { UserRequest } from './user/userRequest.model';
+import { Roc } from './ohlc/roc.model';
+import { SsiModule } from './ssi/ssi.module';
 
 @Module({
   imports: [
@@ -28,12 +35,13 @@ import { OhlcModule } from './ohlc/ohlc.module';
       username: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_DATABASE,
-      models: [],
+      models: [Buysell, DailyOhlc, IntradayOhlc, User, UserRequest, Roc],
       autoLoadModels: true,
       synchronize: true,
     }),
     UserModule,
     AuthModule,
+    SsiModule,
     StockModule,
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
     BuysellModule,

@@ -11,6 +11,7 @@ import { Server, Socket } from 'socket.io';
 import { StockService } from 'src/stock/stock.service';
 import { Inject, Logger, forwardRef } from '@nestjs/common';
 import { BuysellService } from 'src/buysell/buysell.service';
+import { SsiService } from 'src/ssi/ssi.service';
 
 @WebSocketGateway({
   cors: {
@@ -30,6 +31,7 @@ export class EventsGateway
 
     @Inject(forwardRef(() => BuysellService))
     private readonly buysellService: BuysellService,
+    private readonly ssiService: SsiService,
   ) {}
 
   private logger: Logger = new Logger('AppGateway');
@@ -49,8 +51,18 @@ export class EventsGateway
     client.emit('update_filtered_stock_data', { data });
   }
 
+  @SubscribeMessage('ssi_mi_request')
+  async handleUpdateMi(client: Socket, payload: any) {
+    const indexData = this.ssiService.getMiData(payload);
+    client.emit('ssi_mi_update', { data: indexData });
+
+    // const data = await this.stockService.getFilter(payload);
+    // this.logger.log(`Update Filter to client: ${data.length}`);
+    // client.emit('update_filtered_stock_data', { data });
+  }
+
   afterInit(server: Server) {
-    console.log(server);
+    // console.log(server);
   }
   handleDisconnect(client: Socket) {
     this.logger.log(`Disconnect: ${client.id}`);

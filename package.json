@@ -47,7 +47,8 @@
     "sequelize": "^6.37.1",
     "sequelize-typescript": "^2.1.6",
     "socket.io": "^4.7.4",
-    "ssi-fcdata": "^2.2.0"
+    "ssi-fcdata": "^2.2.0",
+    "websocket": "^1.0.35"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

@@ -8,6 +8,8 @@ const instance = axios.create({
 
 export const endpoints = {
   GET_ACCESS_TOKEN: 'AccessToken',
+  SECURITIES_DETAIL: 'SecuritiesDetails',
+  INDEX_COMPONENT: 'IndexComponents',
 };
 
 export default instance;

@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { endpoints } from 'src/shared/utils/api';
-import { Utils } from 'src/shared/utils/utils';
 import * as client from './ssi-fcdata';
 import api from '../shared/utils/api';
 import { InjectModel } from '@nestjs/sequelize';
-import { Security } from './security.model';
+import { Security } from './model/security.model';
+import { IndexSecurity } from './model/indexSecurity.model';
+import { Index } from './model/index.model';
+import { Op } from 'sequelize';
 
 @Injectable()
 export class SsiService {
@@ -20,6 +22,10 @@ export class SsiService {
   constructor(
     @InjectModel(Security)
     private securityModel: typeof Security,
+    @InjectModel(IndexSecurity)
+    private indexSecurityModel: typeof IndexSecurity,
+    @InjectModel(Index)
+    private indexModel: typeof Index,
   ) {}
 
   async onModuleInit() {
@@ -158,16 +164,22 @@ export class SsiService {
     const data = [];
     const pageSize = 1000;
     let pageIndex = 1;
+    const fields = Object.keys(this.securityModel.getAttributes()).filter(
+      (key) =>
+        !this.securityModel.getAttributes()[key].primaryKey &&
+        !this.securityModel.getAttributes()[key].unique,
+    );
 
     let length;
     do {
       const newData = await fetchData(pageIndex, pageSize, token);
       length = newData.TotalNoSym;
+
       try {
         const stocks = await this.securityModel.bulkCreate(
           newData.RepeatedInfo,
           {
-            ignoreDuplicates: true,
+            updateOnDuplicate: fields,
           },
         );
         data.push(...stocks);
@@ -184,9 +196,122 @@ export class SsiService {
     // return data;
   }
 
-  async getSecurity() {
-    const securities = await this.securityModel.findAll({});
-    return { length: securities.length, data: securities };
+  async importIndexComponent() {
+    const fetchData = async (pageIndex, pageSize, token) => {
+      let data;
+      const lookupRequest = {
+        indexCode: '',
+        pageIndex: pageIndex,
+        pageSize: pageSize,
+        headers: token,
+      };
+
+      await api
+        .get(
+          endpoints.INDEX_COMPONENT +
+            '?lookupRequest.indexCode=' +
+            lookupRequest.indexCode +
+            '&lookupRequest.pageIndex=' +
+            lookupRequest.pageIndex +
+            '&lookupRequest.pageSize=' +
+            lookupRequest.pageSize,
+          { headers },
+        )
+        .then((res) => {
+          data = res.data;
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+      return data;
+    };
+    const token = this.getToken();
+
+    const headers = {
+      Authorization: token, // Thêm header Authorization
+    };
+
+    const inputData = [];
+    const pageSize = 1000;
+    let pageIndex = 1;
+    const fields = Object.keys(this.indexModel.getAttributes()).filter(
+      (key) =>
+        !this.indexModel.getAttributes()[key].primaryKey &&
+        !this.indexModel.getAttributes()[key].unique,
+    );
+
+    console.log(fields);
+
+    let length;
+    do {
+      const response = await fetchData(pageIndex, pageSize, token);
+
+      length = response.totalRecord;
+      inputData.push(...response.data);
+
+      console.log('load', pageIndex);
+      pageIndex++;
+
+      await this.sleep(1000);
+      // code block to be executed
+    } while ((pageIndex - 1) * pageSize < length);
+
+    try {
+      // await this.indexModel.bulkCreate(inputData, {
+      //   updateOnDuplicate: fields,
+      // });
+    } catch (error) {
+      console.log(error);
+    }
+    const indexSecurities = inputData.map((item) => {
+      const securities = item.IndexComponent.map((securityItem) => {
+        return {
+          indexCode: item.IndexCode,
+          symbol: securityItem.StockSymbol,
+        };
+      });
+      return securities;
+    });
+
+    const result = indexSecurities.flat();
+
+    await this.indexSecurityModel.truncate();
+    try {
+      await this.indexSecurityModel.bulkCreate(result);
+    } catch (error) {
+      console.log(error);
+    }
+
+    return { length: result.length, result };
+    // return data;
+  }
+
+  async getSecurity(indexes: string) {
+    console.log(indexes);
+    const indexArray = indexes.split(',');
+    console.log(indexArray);
+
+    const results = await this.indexSecurityModel.findAll({
+      where: { indexCode: { [Op.in]: indexArray } }, // Sử dụng Op.in để tạo điều kiện OR
+    });
+
+    const groupedResults = new Map<string, any[]>();
+
+    // Nhóm dữ liệu theo indexCode
+    results.forEach((result) => {
+      const indexCode = result.indexCode;
+      if (!groupedResults.has(indexCode)) {
+        groupedResults.set(indexCode, []);
+      }
+      groupedResults.get(indexCode).push(result.symbol);
+    });
+
+    // Chuyển đổi Map thành mảng các đối tượng
+    const groupedArray = Array.from(groupedResults, ([indexCode, data]) => ({
+      indexCode,
+      data,
+    }));
+    return { length: groupedArray.length, data: groupedArray };
   }
 
   sleep(ms) {

@@ -20,6 +20,9 @@ import { User } from './user/user.model';
 import { UserRequest } from './user/userRequest.model';
 import { Roc } from './ohlc/roc.model';
 import { SsiModule } from './ssi/ssi.module';
+import { Index } from './ssi/model/index.model';
+import { IndexSecurity } from './ssi/model/indexSecurity.model';
+import { Security } from './ssi/model/security.model';
 
 @Module({
   imports: [
@@ -35,7 +38,17 @@ import { SsiModule } from './ssi/ssi.module';
       username: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_DATABASE,
-      models: [Buysell, DailyOhlc, IntradayOhlc, User, UserRequest, Roc],
+      models: [
+        Buysell,
+        DailyOhlc,
+        IntradayOhlc,
+        User,
+        UserRequest,
+        Roc,
+        Index,
+        IndexSecurity,
+        Security,
+      ],
       autoLoadModels: true,
       synchronize: true,
     }),

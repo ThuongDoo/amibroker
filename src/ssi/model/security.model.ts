@@ -1,10 +1,13 @@
 import {
+  BelongsToMany,
   Column,
   DataType,
   Model,
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
+import { IndexSecurity } from './indexSecurity.model';
+import { Index } from './index.model';
 
 @Table
 export class Security extends Model {
@@ -95,4 +98,7 @@ export class Security extends Model {
 
   @Column({ field: 'tickIncrement4' })
   TickIncrement4: number;
+
+  @BelongsToMany(() => Index, () => IndexSecurity)
+  Indexes: Index[];
 }

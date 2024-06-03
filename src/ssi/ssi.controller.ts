@@ -11,14 +11,12 @@ export class SsiController {
 
   @Get('import/indexComponent')
   async importIndexComponent() {
-    // const lookupRequest =
-    //   endpoints.INDEX_COMPONENT + '?lookupRequest.indexCode=' + '';
-    // return await this.ssiService.importSSI('securityModel', lookupRequest);
+    return await this.ssiService.importIndexComponent();
   }
 
-  @Get('get/Security')
-  async getSecurity() {
-    return await this.ssiService.getSecurity();
+  @Get('security')
+  async getSecurity(@Query('indexes') indexes: string) {
+    return await this.ssiService.getSecurity(indexes);
   }
 
   @Get('fData')

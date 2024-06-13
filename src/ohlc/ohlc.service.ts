@@ -108,15 +108,13 @@ export class OhlcService {
     const securities = await this.securityModel.findAll({
       attributes: ['Symbol'],
     });
-    // console.log(securities);
-    // const symbols = await securities.map((item) => {
-    //   return item.Symbol;
-    // });
+    const symbols = await securities.map((item) => {
+      return item.Symbol;
+    });
 
-    // for (const symbol of symbols) {
-    //   fetchDataEachSymbol({ symbol, headers });
-    // }
-    fetchDataEachSymbol({ symbol: 'SSI', headers });
+    for (const symbol of symbols) {
+      fetchDataEachSymbol({ symbol, headers });
+    }
   }
 
   async importIntraday(data: any): Promise<any> {}

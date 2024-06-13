@@ -34,7 +34,7 @@ export class OhlcService {
       let data, length;
       const lookupRequest = {
         symbol: symbol,
-        fromDate: '06/01/2000',
+        fromDate: '01/01/2000',
         pageIndex: pageIndex,
         pageSize: 1000,
         ascending: true,
@@ -87,7 +87,6 @@ export class OhlcService {
 
     const fetchDataEachSymbol = async ({ symbol, headers }) => {
       let pageIndex = 1;
-      await this.dailyOhlcModel.truncate();
       const newData = await fetchData({ symbol, pageIndex, headers });
 
       const length = newData.length;
@@ -111,9 +110,10 @@ export class OhlcService {
     const symbols = await securities.map((item) => {
       return item.Symbol;
     });
+    await this.dailyOhlcModel.truncate();
 
     for (const symbol of symbols) {
-      fetchDataEachSymbol({ symbol, headers });
+      await fetchDataEachSymbol({ symbol, headers });
     }
   }
 
@@ -128,8 +128,6 @@ export class OhlcService {
   }
 
   async getIntraday(ticker: string) {
-    console.log(ticker);
-
     const ohlcs = await this.intradayOhlcModel.findAll({
       where: { ticker: ticker },
       order: [['time', 'ASC']],

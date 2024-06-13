@@ -10,7 +10,7 @@ import {
 export class DailyOhlc extends Model {
   @PrimaryKey
   @Column
-  ticker: string;
+  symbol: string;
 
   @PrimaryKey
   @Column(DataType.DATEONLY)

@@ -1,4 +1,5 @@
 import {
+  BelongsToMany,
   Column,
   DataType,
   IsEmail,
@@ -7,6 +8,8 @@ import {
   Table,
   Unique,
 } from 'sequelize-typescript';
+import { Security } from 'src/ssi/model/security.model';
+import { UserSecurity } from './userSecurity.model';
 
 export enum UserRole {
   ADMIN = 'admin',
@@ -45,4 +48,7 @@ export class User extends Model {
     type: DataType.DATE,
   })
   expirationDate: Date;
+
+  @BelongsToMany(() => Security, () => UserSecurity)
+  Securities: Security[];
 }

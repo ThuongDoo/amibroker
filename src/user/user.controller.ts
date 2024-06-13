@@ -6,13 +6,14 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Request,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UserRequestDto } from './dto/userRequest.dto';
 import { UpdateUserDto } from './dto/updateUser.dto';
 import { Roles } from 'src/shared/decorator/roles.decorator';
-import { UserRole } from './user.model';
+import { UserRole } from './model/user.model';
 
 @Controller('user')
 export class UserController {
@@ -75,5 +76,29 @@ export class UserController {
   @Delete('/deleteUser/:phone')
   deleteUser(@Param('phone') phones: string) {
     return this.userService.deleteUser(phones);
+  }
+
+  @Post('security/:phone/:security')
+  async addSecurity(
+    @Param('phone') phone: string,
+    @Param('security') security: string,
+  ) {
+    return await this.userService.addFavoriteSecurity(phone, security);
+  }
+
+  @Delete('security/:phone/:security')
+  async removeSecurity(
+    @Param('phone') phone: string,
+    @Param('security') security: string,
+  ) {
+    return await this.userService.removeFavoriteSecurity(phone, security);
+  }
+
+  @Get('security/:phone')
+  async getSecurity(
+    @Param('phone') phone: string,
+    @Query('symbol') symbol: string,
+  ) {
+    return await this.userService.getFavoriteSecurity(phone, symbol);
   }
 }

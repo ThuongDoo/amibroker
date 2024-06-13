@@ -36,13 +36,6 @@ export class EventsGateway
 
   private logger: Logger = new Logger('AppGateway');
   @WebSocketServer() server: Server;
-  @SubscribeMessage('stock_request')
-  async handleUpdateStock(client: Socket, payload: any) {
-    const data = await this.stockService.getStockByName(payload);
-    this.logger.log(`Data send to client: ${data.length}`);
-    const sanData = this.stockService.getSan();
-    client.emit('update_stock_data', { data, sanData });
-  }
 
   @SubscribeMessage('filterd_stock_request')
   async handleUpdateFilter(client: Socket, payload: any) {
@@ -53,12 +46,32 @@ export class EventsGateway
 
   @SubscribeMessage('ssi_mi_request')
   async handleUpdateMi(client: Socket, payload: any) {
-    const indexData = this.ssiService.getMiData(payload);
-    client.emit('ssi_mi_update', { data: indexData });
+    const data = this.ssiService.getMiData(payload);
+    client.emit('ssi_mi_update', { data: data });
+  }
 
-    // const data = await this.stockService.getFilter(payload);
-    // this.logger.log(`Update Filter to client: ${data.length}`);
-    // client.emit('update_filtered_stock_data', { data });
+  @SubscribeMessage('ssi_trade_request')
+  async handleUpdateTrade(client: Socket, payload: any) {
+    const data = await this.ssiService.getTradeData(payload);
+    client.emit('ssi_trade_update', { data: data });
+  }
+
+  @SubscribeMessage('ssi_favorite_request')
+  async handleUpdateFavorite(client: Socket, payload: any) {
+    const data = await this.ssiService.getTradeData(payload);
+    client.emit('ssi_favorite_update', { data: data });
+  }
+
+  @SubscribeMessage('ssi_x_request')
+  async handleUpdateX(client: Socket, payload: any) {
+    const data = await this.ssiService.getXData(payload);
+    client.emit('ssi_x_update', { data: data });
+  }
+
+  @SubscribeMessage('ssi_r_request')
+  async handleUpdateR(client: Socket, payload: any) {
+    const data = await this.ssiService.getRData(payload);
+    client.emit('ssi_r_update', { data: data });
   }
 
   afterInit(server: Server) {

@@ -6,7 +6,7 @@ export const CATEGORIES = [
   {
     name: 'VN30',
     displayName: 'VN30',
-    stocks: [
+    securities: [
       'ACB',
       'BCM',
       'BID',
@@ -42,7 +42,7 @@ export const CATEGORIES = [
   {
     name: 'NGAN_HANG',
     displayName: 'NGÂN HÀNG',
-    stocks: [
+    securities: [
       'ABB',
       'ACB',
       'BAB',
@@ -75,7 +75,7 @@ export const CATEGORIES = [
   {
     name: 'BDS',
     displayName: 'BĐS',
-    stocks: [
+    securities: [
       'HDC',
       'TCH',
       'DXG',
@@ -117,7 +117,7 @@ export const CATEGORIES = [
   {
     name: 'CHUNG_KHOAN',
     displayName: 'CHỨNG KHOÁN',
-    stocks: [
+    securities: [
       'SSI',
       'HCM',
       'VND',
@@ -149,7 +149,7 @@ export const CATEGORIES = [
   {
     name: 'BAN_LE',
     displayName: 'BÁN LẺ',
-    stocks: [
+    securities: [
       'MWG',
       'FRT',
       'PET',
@@ -168,7 +168,7 @@ export const CATEGORIES = [
   {
     name: 'THEP',
     displayName: 'THÉP - SẢN PHẨM TỪ THÉP',
-    stocks: [
+    securities: [
       'NSH',
       'VGS',
       'HPG',
@@ -185,17 +185,17 @@ export const CATEGORIES = [
   {
     name: 'DAU_KHI',
     displayName: 'DẦU KHÍ',
-    stocks: ['PVS', 'PVD', 'PVC', 'PVB', 'GAS', 'PVT', 'OIL', 'BSR', 'PSH'],
+    securities: ['PVS', 'PVD', 'PVC', 'PVB', 'GAS', 'PVT', 'OIL', 'BSR', 'PSH'],
   },
   {
     name: 'BAO_HIEM',
     displayName: 'BẢO HIỂM',
-    stocks: ['BMI', 'BVH', 'BIC', 'MIG', 'PVI', 'PGI', 'PRE', 'PTI', 'VNR'],
+    securities: ['BMI', 'BVH', 'BIC', 'MIG', 'PVI', 'PGI', 'PRE', 'PTI', 'VNR'],
   },
   {
     name: 'BDS_KCN',
     displayName: 'BĐS-KCN',
-    stocks: [
+    securities: [
       'D2D',
       'GVR',
       'IDC',
@@ -220,7 +220,7 @@ export const CATEGORIES = [
   {
     name: 'DAU_TU_CONG',
     displayName: 'ĐẦU TƯ CÔNG',
-    stocks: [
+    securities: [
       'BCC',
       'BTS',
       'C32',
@@ -246,7 +246,7 @@ export const CATEGORIES = [
   {
     name: 'XD_VLXD',
     displayName: 'XD-VLXD',
-    stocks: [
+    securities: [
       'VCG',
       'VC7',
       'HU4',
@@ -282,7 +282,7 @@ export const CATEGORIES = [
   {
     name: 'THAN_KHOANGSAN',
     displayName: 'THAN - KHOÁNG SẢN',
-    stocks: [
+    securities: [
       'CLX',
       'KSB',
       'MDC',
@@ -305,7 +305,7 @@ export const CATEGORIES = [
   {
     name: 'DET_MAY',
     displayName: 'DỆT MAY',
-    stocks: [
+    securities: [
       'ADS',
       'EVE',
       'FTM',
@@ -321,7 +321,7 @@ export const CATEGORIES = [
   {
     name: 'VANTAI_CANG',
     displayName: 'VẬN TẢI - CẢNG',
-    stocks: [
+    securities: [
       'DVP',
       'DXP',
       'GMD',
@@ -350,7 +350,7 @@ export const CATEGORIES = [
   {
     name: 'HOACHAT_PHANBON',
     displayName: 'HÓA CHẤT - PHÂN BÓN',
-    stocks: [
+    securities: [
       'BFC',
       'CSV',
       'DCM',
@@ -373,12 +373,12 @@ export const CATEGORIES = [
   {
     name: 'THUY_SAN',
     displayName: 'THỦY SẢN',
-    stocks: ['ACL', 'ANV', 'ASM', 'CMX', 'FMC', 'IDI', 'MPC', 'VHC'],
+    securities: ['ACL', 'ANV', 'ASM', 'CMX', 'FMC', 'IDI', 'MPC', 'VHC'],
   },
   {
     name: 'THUC_PHAM',
     displayName: 'THỰC PHẨM',
-    stocks: [
+    securities: [
       'AFX',
       'DBC',
       'DHC',
@@ -402,7 +402,7 @@ export const CATEGORIES = [
   {
     name: 'DIEN_NANGLUONG',
     displayName: 'ĐIỆN - NĂNG LƯỢNG',
-    stocks: [
+    securities: [
       'KHP',
       'PPC',
       'PVG',
@@ -424,17 +424,17 @@ export const CATEGORIES = [
   {
     name: 'HANGKHONG_DULICH',
     displayName: 'HÀNG KHÔNG - DU LỊCH',
-    stocks: ['ACV', 'AST', 'HVN', 'SAS', 'VJC', 'VTD', 'NCT', 'DAH', 'RIC'],
+    securities: ['ACV', 'AST', 'HVN', 'SAS', 'VJC', 'VTD', 'NCT', 'DAH', 'RIC'],
   },
   {
     name: 'DUONG_GO',
     displayName: 'ĐƯỜNG GỖ',
-    stocks: ['GDT', 'LSS', 'QNS', 'SBT', 'TTF'],
+    securities: ['GDT', 'LSS', 'QNS', 'SBT', 'TTF'],
   },
   {
     name: 'NHUA_CAOSU',
     displayName: 'NHỰA - CAO SU',
-    stocks: [
+    securities: [
       'AAA',
       'APC',
       'APP',
@@ -469,16 +469,16 @@ export const CATEGORIES = [
   {
     name: 'DICH_VU',
     displayName: 'DỊCH VỤ',
-    stocks: ['HAX', 'PAN', 'TCT', 'VNG', 'VTP'],
+    securities: ['HAX', 'PAN', 'TCT', 'VNG', 'VTP'],
   },
   {
     name: 'DUOC',
     displayName: 'DƯỢC',
-    stocks: ['AMV', 'DBD', 'DCL', 'DHG', 'DMC', 'DVN', 'JVC', 'TNH'],
+    securities: ['AMV', 'DBD', 'DCL', 'DHG', 'DMC', 'DVN', 'JVC', 'TNH'],
   },
   {
     name: 'CONG_NGHE',
     displayName: 'CÔNG NGHỆ',
-    stocks: ['CMG', 'ELC', 'FPT', 'ICT', 'SAM', 'VEC'],
+    securities: ['CMG', 'ELC', 'FPT', 'ICT', 'SAM', 'VEC'],
   },
 ];

@@ -3,10 +3,12 @@ import { CreateUserDto } from './dto/createUser.dto';
 import * as bcrypt from 'bcryptjs';
 import { Request } from 'express';
 import { InjectModel } from '@nestjs/sequelize';
-import { User } from './user.model';
+import { User } from './model/user.model';
 import { UserRequest } from './userRequest.model';
 import { UserRequestDto } from './dto/userRequest.dto';
 import { UpdateUserDto } from './dto/updateUser.dto';
+import { UserSecurity } from './model/userSecurity.model';
+import { Security } from 'src/ssi/model/security.model';
 
 @Injectable()
 export class UserService {
@@ -15,6 +17,10 @@ export class UserService {
     private userModel: typeof User,
     @InjectModel(UserRequest)
     private userRequestModel: typeof UserRequest,
+    @InjectModel(UserSecurity)
+    private userSecurityModel: typeof UserSecurity,
+    @InjectModel(Security)
+    private securityModel: typeof Security,
   ) {}
 
   findAll(): Promise<User[]> {
@@ -190,5 +196,68 @@ export class UserService {
     } catch (error) {
       throw new BadRequestException('update failed');
     }
+  }
+
+  async addFavoriteSecurity(phone: string, securitySymbol: string) {
+    const user = await this.userModel.findOne({ where: { phone: phone } });
+    if (!user) {
+      throw new BadRequestException('user is not exist');
+    }
+
+    const security = await this.securityModel.findOne({
+      where: { Symbol: securitySymbol },
+      attributes: ['Symbol'],
+    });
+    if (!security) {
+      throw new BadRequestException('security is not exist');
+    }
+    console.log(security);
+
+    const userSecurity = await this.userSecurityModel.create(
+      {
+        phone: phone,
+        symbol: securitySymbol,
+      },
+      { ignoreDuplicates: true },
+    );
+
+    return { userSecurity };
+  }
+
+  async removeFavoriteSecurity(phone: string, securitySymbol: string) {
+    const result = await this.userSecurityModel.findOne({
+      where: { phone: phone, symbol: securitySymbol },
+    });
+    if (!result) {
+      throw new BadRequestException('not found');
+    }
+    await result.destroy();
+
+    return { message: 'delete success' };
+  }
+
+  async getFavoriteSecurity(phone: string, symbol: string) {
+    if (symbol) {
+      const result = await this.userSecurityModel.findOne({
+        where: { phone: phone, symbol: symbol },
+      });
+      return { data: result };
+    }
+    const user = await this.userModel.findOne({
+      where: { phone: phone },
+      include: [
+        {
+          model: this.securityModel, // Assuming 'securitiesModel' exists
+          as: 'Securities', // Optional alias for clarity (optional)
+          attributes: ['Symbol'], // Include only the 'Symbol' attribute
+        },
+      ],
+    });
+
+    if (!user) {
+      throw new BadRequestException('user is not exist');
+    }
+
+    return { data: user.Securities };
   }
 }

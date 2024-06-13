@@ -477,9 +477,6 @@ export class StockService {
     this.tempData = [];
     this.stockSan = await this.formatSan();
 
-    this.ohlcService.updateDaily(this.stocksData);
-    this.ohlcService.updateIntraday(this.stocksData);
-
     await this.eventsGateway.sendStockUpdateSignal();
   }
 

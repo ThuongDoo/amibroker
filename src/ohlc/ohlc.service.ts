@@ -1,11 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { DailyOhlc } from './dailyOhlc.model';
-import { IntradayOhlc } from './intradayOhlc.model';
+import { DailyOhlc } from './model/dailyOhlc.model';
+import { IntradayOhlc } from './model/intradayOhlc.model';
 import { CATEGORIES } from 'src/shared/utils/contants';
-import { Roc } from './roc.model';
+import { Roc } from './model/roc.model';
 import { format, subMonths, subYears } from 'date-fns';
 import { Op } from 'sequelize';
+import { SsiService } from 'src/ssi/ssi.service';
+import { Security } from 'src/ssi/model/security.model';
+import { endpoints } from 'src/shared/utils/api';
+import api from '../shared/utils/api';
+import { Utils } from 'src/shared/utils/utils';
 
 @Injectable()
 export class OhlcService {
@@ -16,86 +21,112 @@ export class OhlcService {
     private intradayOhlcModel: typeof IntradayOhlc,
     @InjectModel(Roc)
     private rocModel: typeof Roc,
+    @InjectModel(Security)
+    private securityModel: typeof Security,
+    private ssiServie: SsiService,
   ) {}
 
   dailyOhlcImported = [];
   intradayOhlcImported = [];
 
-  async importDaily(data: any): Promise<any> {
-    if (data[data.length - 1]?.header === 'done') {
-      const pushData = data.slice(0, data.length - 1);
-      this.dailyOhlcImported.push(...pushData);
-      const newData = this.dailyOhlcImported;
+  async updateDaily(): Promise<any> {
+    const fetchData = async ({ symbol, pageIndex, headers }) => {
+      let data, length;
+      const lookupRequest = {
+        symbol: symbol,
+        fromDate: '06/01/2000',
+        pageIndex: pageIndex,
+        pageSize: 1000,
+        ascending: true,
+      };
+      await api
+        .get(
+          endpoints.DAILY_OHLC +
+            '?lookupRequest.symbol=' +
+            lookupRequest.symbol +
+            '&lookupRequest.fromDate=' +
+            lookupRequest.fromDate +
+            '&lookupRequest.pageIndex=' +
+            lookupRequest.pageIndex +
+            '&lookupRequest.pageSize=' +
+            lookupRequest.pageSize +
+            '&lookupRequest.ascending=' +
+            lookupRequest.ascending,
+          { headers },
+        )
+        .then((res) => {
+          data = res.data.data;
+          length = res.data.totalRecord;
+        })
+        .catch((e) => {
+          console.log(e);
+        });
 
-      this.dailyOhlcImported = [];
-      this.updateRoc(newData);
+      const formattedData = data.map((item) => {
+        return {
+          symbol: item.Symbol,
+          time: Utils.convertToISODate(item.TradingDate),
+          market: item.Market,
+          open: item.Open,
+          high: item.High,
+          low: item.Low,
+          close: item.Close,
+          value: item.Value,
+          volume: item.Volume,
+        };
+      });
       try {
-        await this.dailyOhlcModel.truncate();
-        const chunkSize = 2000; // Số lượng mục mỗi chunk
-        const totalData = newData.length;
-        let startIndex = 0;
-        let results = [];
-        while (startIndex < totalData) {
-          const chunkData = newData.slice(startIndex, startIndex + chunkSize);
-          const chunkResults = await this.dailyOhlcModel.bulkCreate(chunkData, {
-            ignoreDuplicates: true,
-          });
-          results = results.concat(chunkResults);
-          startIndex += chunkSize;
-        }
-        console.log('imported file length: ', results.length);
-        return results;
+        this.dailyOhlcModel.bulkCreate(formattedData, {
+          ignoreDuplicates: true,
+        });
       } catch (error) {
-        throw error;
+        console.log(error);
       }
-    } else {
-      this.dailyOhlcImported.push(...data);
-    }
+      return { data, length };
+    };
+
+    const fetchDataEachSymbol = async ({ symbol, headers }) => {
+      let pageIndex = 1;
+      await this.dailyOhlcModel.truncate();
+      const newData = await fetchData({ symbol, pageIndex, headers });
+
+      const length = newData.length;
+
+      pageIndex++;
+
+      do {
+        await Utils.sleep(1000);
+        fetchData({ symbol, pageIndex, headers });
+        pageIndex++;
+      } while ((pageIndex - 1) * 1000 < length);
+    };
+
+    const token = this.ssiServie.getToken();
+    const headers = {
+      Authorization: token, // Thêm header Authorization
+    };
+    const securities = await this.securityModel.findAll({
+      attributes: ['Symbol'],
+    });
+    // console.log(securities);
+    // const symbols = await securities.map((item) => {
+    //   return item.Symbol;
+    // });
+
+    // for (const symbol of symbols) {
+    //   fetchDataEachSymbol({ symbol, headers });
+    // }
+    fetchDataEachSymbol({ symbol: 'SSI', headers });
   }
 
-  async importIntraday(data: any): Promise<any> {
-    if (data[data.length - 1]?.header === 'done') {
-      const pushData = data.slice(0, data.length - 1);
-      this.intradayOhlcImported.push(...pushData);
-      const newData = this.intradayOhlcImported;
-      this.intradayOhlcImported = [];
-      try {
-        await this.intradayOhlcModel.truncate();
-        const chunkSize = 2000; // Số lượng mục mỗi chunk
-        const totalData = newData.length;
-        let startIndex = 0;
-        let results = [];
+  async importIntraday(data: any): Promise<any> {}
 
-        while (startIndex < totalData) {
-          const chunkData = newData.slice(startIndex, startIndex + chunkSize);
-          const chunkResults = await this.intradayOhlcModel.bulkCreate(
-            chunkData,
-            {
-              ignoreDuplicates: true,
-            },
-          );
-          results = results.concat(chunkResults);
-          startIndex += chunkSize;
-        }
-
-        console.log('imported file length: ', results.length);
-        return results;
-      } catch (error) {
-        throw error;
-      }
-    } else {
-      this.intradayOhlcImported.push(...data);
-    }
-  }
-
-  async getDaily(ticker: string) {
-    console.log(ticker);
-
+  async getDaily(symbol: string) {
     const ohlcs = await this.dailyOhlcModel.findAll({
-      where: { ticker: ticker },
+      where: { symbol: symbol },
       order: [['time', 'ASC']],
     });
-    return ohlcs;
+    return { length: ohlcs.length, data: ohlcs };
   }
 
   async getIntraday(ticker: string) {
@@ -108,37 +139,15 @@ export class OhlcService {
     return ohlcs;
   }
 
-  async updateDaily(data: any) {
-    console.log(data);
-  }
+  async getRoc(startDate: Date, endDate: Date) {
+    console.log(startDate, endDate);
 
-  async updateIntraday(data: any) {}
-
-  async getRoc(timeRange: any) {
-    let startDate: Date;
-
-    // Tính toán ngày bắt đầu dựa trên timeRange
-    switch (timeRange) {
-      case '6m':
-        startDate = subMonths(new Date(), 6);
-        break;
-      case '1y':
-        startDate = subYears(new Date(), 1);
-        break;
-      case '2y':
-        startDate = subYears(new Date(), 2);
-        break;
-      case '5y':
-        startDate = subYears(new Date(), 5);
-        break;
-      default:
-        throw new Error('Invalid time range');
-    }
     const rocs = await this.rocModel.findAll({
       order: [['time', 'ASC']],
       where: {
         time: {
-          [Op.gte]: format(startDate, 'yyyy-MM-dd'),
+          // [Op.gte]: format(startDate, 'yyyy-MM-dd'),
+          [Op.between]: [startDate, endDate],
         },
       },
     });
@@ -222,7 +231,7 @@ export class OhlcService {
     // Phân loại các phần tử của mảng
     stocks.forEach((stock) => {
       CATEGORIES.forEach((category) => {
-        if (category.stocks.includes(stock.ticker)) {
+        if (category.securities.includes(stock.ticker)) {
           categorizedStocksByCategory[category.name].push({
             ticker: stock.ticker,
             time: stock.time,

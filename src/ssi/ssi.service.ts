@@ -7,6 +7,7 @@ import { Security } from './model/security.model';
 import { IndexSecurity } from './model/indexSecurity.model';
 import { Index } from './model/index.model';
 import { Op } from 'sequelize';
+import { Utils } from 'src/shared/utils/utils';
 
 @Injectable()
 export class SsiService {
@@ -49,6 +50,7 @@ export class SsiService {
     client.bind(client.events.onConnected, function () {
       client.switchChannel(
         'MI:ALL,F:ALL,X:ALL,X-QUOTE:ALL,X-TRADE:ALL,B:ALL,R:ALL',
+        // 'R:ALL',
       );
     });
     client.start();
@@ -66,8 +68,11 @@ export class SsiService {
         token = 'Bearer ' + res.data.data.accessToken;
       })
       .catch((e) => {
+        console.log('e');
+
         throw e;
       });
+
     return token;
   }
 
@@ -83,7 +88,7 @@ export class SsiService {
         this.fData[data.Symbol] = data;
         break;
       case 'X':
-        this.xData[data.Sybmol] = data;
+        this.xData[data.Symbol] = data;
         break;
       case 'X-QUOTE':
         this.quoteData[data.Sybmol] = data;
@@ -119,8 +124,33 @@ export class SsiService {
         }
         return result;
       }, []);
-      return filteredIndex;
+
+      return JSON.stringify(filteredIndex);
     }
+  }
+
+  async getTradeData(securites: string) {
+    if (securites === null) {
+      const data = await Object.values(this.tradeData);
+      return JSON.stringify(data);
+    } else {
+      const securityArray = securites.split(',');
+      const filteredSecurity = await securityArray.reduce((result, key) => {
+        if (this.tradeData.hasOwnProperty(key)) {
+          result.push(this.tradeData[key]);
+        }
+        return result;
+      }, []);
+      return JSON.stringify(filteredSecurity);
+    }
+  }
+
+  async getXData(security: string) {
+    return JSON.stringify(this.xData[security]);
+  }
+
+  async getRData(security: string) {
+    return JSON.stringify(this.rData[security]);
   }
 
   async importSecurity() {
@@ -189,7 +219,7 @@ export class SsiService {
       console.log('load', pageIndex);
       pageIndex++;
 
-      await this.sleep(1000);
+      await Utils.sleep(1000);
       // code block to be executed
     } while ((pageIndex - 1) * pageSize < length);
     return { length: data.length, data };
@@ -252,14 +282,14 @@ export class SsiService {
       console.log('load', pageIndex);
       pageIndex++;
 
-      await this.sleep(1000);
+      await Utils.sleep(1000);
       // code block to be executed
     } while ((pageIndex - 1) * pageSize < length);
 
     try {
-      // await this.indexModel.bulkCreate(inputData, {
-      //   updateOnDuplicate: fields,
-      // });
+      await this.indexModel.bulkCreate(inputData, {
+        updateOnDuplicate: fields,
+      });
     } catch (error) {
       console.log(error);
     }
@@ -287,34 +317,42 @@ export class SsiService {
   }
 
   async getSecurity(indexes: string) {
-    console.log(indexes);
-    const indexArray = indexes.split(',');
-    console.log(indexArray);
+    if (indexes === undefined) {
+      const results = await this.securityModel.findAll({
+        attributes: ['Symbol'],
+      });
+      return { length: results.length, data: results };
+    } else {
+      const indexArray = indexes.split(',');
+      console.log(indexArray);
 
-    const results = await this.indexSecurityModel.findAll({
-      where: { indexCode: { [Op.in]: indexArray } }, // Sử dụng Op.in để tạo điều kiện OR
-    });
-
-    const groupedResults = new Map<string, any[]>();
-
-    // Nhóm dữ liệu theo indexCode
-    results.forEach((result) => {
-      const indexCode = result.indexCode;
-      if (!groupedResults.has(indexCode)) {
-        groupedResults.set(indexCode, []);
+      if (indexArray.length === 1) {
+        const results = await this.securityModel.findOne({
+          where: { Symbol: indexes },
+        });
+        return { data: results };
       }
-      groupedResults.get(indexCode).push(result.symbol);
-    });
+      const results = await this.indexSecurityModel.findAll({
+        where: { indexCode: { [Op.in]: indexArray } }, // Sử dụng Op.in để tạo điều kiện OR
+      });
 
-    // Chuyển đổi Map thành mảng các đối tượng
-    const groupedArray = Array.from(groupedResults, ([indexCode, data]) => ({
-      indexCode,
-      data,
-    }));
-    return { length: groupedArray.length, data: groupedArray };
-  }
+      const groupedResults = new Map<string, any[]>();
 
-  sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+      // Nhóm dữ liệu theo indexCode
+      results.forEach((result) => {
+        const indexCode = result.indexCode;
+        if (!groupedResults.has(indexCode)) {
+          groupedResults.set(indexCode, []);
+        }
+        groupedResults.get(indexCode).push(result.symbol);
+      });
+
+      // Chuyển đổi Map thành mảng các đối tượng
+      const groupedArray = Array.from(groupedResults, ([indexCode, data]) => ({
+        indexCode,
+        data,
+      }));
+      return { length: groupedArray.length, data: groupedArray };
+    }
   }
 }

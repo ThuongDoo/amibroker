@@ -1,4 +1,4 @@
-import { format, parse } from 'date-fns';
+import { format, formatISO, parse } from 'date-fns';
 
 export class Utils {
   static formatData(csvData) {
@@ -44,5 +44,15 @@ export class Utils {
       });
 
     return result;
+  }
+
+  static sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  static convertToISODate(dateString) {
+    const parsedDate = parse(dateString, 'dd/MM/yyyy', new Date());
+    const isoDate = formatISO(parsedDate, { representation: 'date' });
+    return isoDate;
   }
 }

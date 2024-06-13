@@ -8,6 +8,10 @@ import {
 } from 'sequelize-typescript';
 import { IndexSecurity } from './indexSecurity.model';
 import { Index } from './index.model';
+import { User } from 'src/user/model/user.model';
+import { UserSecurity } from 'src/user/model/userSecurity.model';
+import { Category } from 'src/category/model/category.model';
+import { CategorySecurity } from 'src/category/model/categorySecurity.model';
 
 @Table
 export class Security extends Model {
@@ -101,4 +105,10 @@ export class Security extends Model {
 
   @BelongsToMany(() => Index, () => IndexSecurity)
   Indexes: Index[];
+
+  @BelongsToMany(() => User, () => UserSecurity)
+  Users: User[];
+
+  @BelongsToMany(() => Category, () => CategorySecurity)
+  Categories: Category[];
 }

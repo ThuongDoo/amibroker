@@ -14,15 +14,19 @@ import { AuthenticatedGuard } from './shared/guard/authenticated.guard';
 import { RolesGuard } from './shared/guard/roles.guard';
 import { OhlcModule } from './ohlc/ohlc.module';
 import { Buysell } from './buysell/buysell.model';
-import { DailyOhlc } from './ohlc/dailyOhlc.model';
-import { IntradayOhlc } from './ohlc/intradayOhlc.model';
-import { User } from './user/user.model';
+import { DailyOhlc } from './ohlc/model/dailyOhlc.model';
+import { IntradayOhlc } from './ohlc/model/intradayOhlc.model';
+import { User } from './user/model/user.model';
 import { UserRequest } from './user/userRequest.model';
-import { Roc } from './ohlc/roc.model';
+import { Roc } from './ohlc/model/roc.model';
 import { SsiModule } from './ssi/ssi.module';
 import { Index } from './ssi/model/index.model';
 import { IndexSecurity } from './ssi/model/indexSecurity.model';
 import { Security } from './ssi/model/security.model';
+import { UserSecurity } from './user/model/userSecurity.model';
+import { CategoryModule } from './category/category.module';
+import { Category } from './category/model/category.model';
+import { CategorySecurity } from './category/model/categorySecurity.model';
 
 @Module({
   imports: [
@@ -44,10 +48,13 @@ import { Security } from './ssi/model/security.model';
         IntradayOhlc,
         User,
         UserRequest,
+        UserSecurity,
         Roc,
         Index,
         IndexSecurity,
         Security,
+        Category,
+        CategorySecurity,
       ],
       autoLoadModels: true,
       synchronize: true,
@@ -60,6 +67,7 @@ import { Security } from './ssi/model/security.model';
     BuysellModule,
     EventsModule,
     OhlcModule,
+    CategoryModule,
   ],
   controllers: [AppController],
   providers: [

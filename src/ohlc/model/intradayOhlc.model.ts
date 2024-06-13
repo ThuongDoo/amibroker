@@ -10,7 +10,7 @@ import {
 export class IntradayOhlc extends Model {
   @PrimaryKey
   @Column
-  ticker: string;
+  symbol: string;
 
   @PrimaryKey
   @Column(DataType.DATE)

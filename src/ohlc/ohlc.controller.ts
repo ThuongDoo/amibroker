@@ -11,10 +11,9 @@ export class OhlcController {
     return await this.ohlcService.getDaily(ticker);
   }
 
-  @SkipThrottle()
-  @Post('/daily/import')
-  importChartData(@Body() data) {
-    return this.ohlcService.importDaily(data);
+  @Get('/daily/update')
+  async updateDailyOhlc() {
+    return await this.ohlcService.updateDaily();
   }
 
   @Get('/intraday')
@@ -22,16 +21,11 @@ export class OhlcController {
     return await this.ohlcService.getIntraday(ticker);
   }
 
-  @SkipThrottle()
-  @Post('/intraday/import')
-  async importIntradayChartData(@Body() data) {
-    return await this.ohlcService.importIntraday(data);
-  }
-
-  @Get('/roc/:timeRange')
-  async getRoc(@Param('timeRange') timeRange: string) {
-    console.log(timeRange);
-
-    return await this.ohlcService.getRoc(timeRange);
+  @Get('/roc')
+  async getRoc(
+    @Query('startDate') startDate: Date,
+    @Query('endDate') endDate: Date,
+  ) {
+    return await this.ohlcService.getRoc(startDate, endDate);
   }
 }

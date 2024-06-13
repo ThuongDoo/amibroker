@@ -10,6 +10,8 @@ export const endpoints = {
   GET_ACCESS_TOKEN: 'AccessToken',
   SECURITIES_DETAIL: 'SecuritiesDetails',
   INDEX_COMPONENT: 'IndexComponents',
+  DAILY_OHLC: 'DailyOhlc',
+  INTRADAY_OHLC: 'IntradayOhlc',
 };
 
 export default instance;

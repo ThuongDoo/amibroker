@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { DailyOhlc } from './model/dailyOhlc.model';
 import { IntradayOhlc } from './model/intradayOhlc.model';
@@ -28,12 +28,13 @@ export class OhlcService {
     private categoryModel: typeof Category,
     private ssiServie: SsiService,
   ) {}
+  private logger: Logger = new Logger('OHLC');
 
   dailyOhlcImported = [];
   intradayOhlcImported = [];
   roc = [];
 
-  async updateDaily(): Promise<any> {
+  async updateDaily(chunkIndex): Promise<any> {
     const fetchData = async ({ symbol, pageIndex, headers }) => {
       let data, length;
       const lookupRequest = {
@@ -104,6 +105,8 @@ export class OhlcService {
     };
 
     const token = this.ssiServie.getToken();
+    // const chunkSize = 100;
+    // const chunks = [];
     const headers = {
       Authorization: token, // Thêm header Authorization
     };
@@ -113,6 +116,9 @@ export class OhlcService {
     const symbols = await securities.map((item) => {
       return item.Symbol;
     });
+    // for (let i = 0; i < symbols.length; i += chunkSize) {
+    //   chunks.push(symbols.slice(i, i + chunkSize));
+    // }
     await this.dailyOhlcModel.truncate();
 
     const dataLengths: any = {};
@@ -124,7 +130,11 @@ export class OhlcService {
 
     for (const symbol of symbols) {
       await Utils.sleep(1000);
-      fetchDataEachSymbol({ symbol, headers, length: dataLengths[symbol] });
+      await fetchDataEachSymbol({
+        symbol,
+        headers,
+        length: dataLengths[symbol],
+      });
     }
   }
 

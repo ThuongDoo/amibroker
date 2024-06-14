@@ -12,8 +12,10 @@ export class OhlcController {
   }
 
   @Get('/daily/update')
-  updateDailyOhlc() {
-    this.ohlcService.updateDaily();
+  updateDailyOhlc(@Query('chunkIndex') chunkIndex: string) {
+    const chunk = Number(chunkIndex);
+
+    this.ohlcService.updateDaily(chunk);
     return 'hah';
   }
 

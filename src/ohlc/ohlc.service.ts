@@ -11,6 +11,7 @@ import { Security } from 'src/ssi/model/security.model';
 import { endpoints } from 'src/shared/utils/api';
 import api from '../shared/utils/api';
 import { Utils } from 'src/shared/utils/utils';
+import { Category } from 'src/category/model/category.model';
 
 @Injectable()
 export class OhlcService {
@@ -23,11 +24,14 @@ export class OhlcService {
     private rocModel: typeof Roc,
     @InjectModel(Security)
     private securityModel: typeof Security,
+    @InjectModel(Category)
+    private categoryModel: typeof Category,
     private ssiServie: SsiService,
   ) {}
 
   dailyOhlcImported = [];
   intradayOhlcImported = [];
+  roc = [];
 
   async updateDaily(): Promise<any> {
     const fetchData = async ({ symbol, pageIndex, headers }) => {
@@ -55,12 +59,15 @@ export class OhlcService {
           { headers },
         )
         .then((res) => {
+          console.log(res.data);
+
           data = res.data.data;
           length = res.data.totalRecord;
         })
         .catch((e) => {
           console.log(e);
         });
+      console.log(data);
 
       const formattedData = data.map((item) => {
         return {
@@ -151,8 +158,20 @@ export class OhlcService {
     return rocs;
   }
 
+  async importRoc(data) {
+    if (data.at(-1).header === 'done') {
+      data.pop();
+      this.roc.push(...data);
+      const newData = this.roc;
+      this.roc = [];
+      return await this.updateRoc(newData);
+    } else {
+      this.roc.push(...data);
+    }
+  }
+
   async updateRoc(data) {
-    const categorizedStocks = this.stockToCategoryMap(data);
+    const categorizedStocks = await this.stockToCategoryMap(data);
 
     const averageStocksByTime = categorizedStocks
       .map((item) => {
@@ -216,25 +235,43 @@ export class OhlcService {
     return aggregatedStocks;
   }
 
-  stockToCategoryMap(stocks) {
+  async stockToCategoryMap(stocks) {
     const categorizedStocksByCategory = {};
+    const categories = await this.categoryModel.findAll({
+      attributes: ['id', 'name'],
+      include: [
+        {
+          model: this.securityModel, // Assuming 'securitiesModel' exists
+          as: 'Securities', // Optional alias for clarity (optional)
+          attributes: ['Symbol'], // Include only the 'Symbol' attribute
+        },
+      ],
+    });
+    // console.log(categories[0].Securities[0].dataValues);
 
     // Khởi tạo các danh mục rỗng trong đối tượng kết quả
-    CATEGORIES.forEach((category) => {
-      categorizedStocksByCategory[category.name] = [];
+    categories.forEach((category) => {
+      categorizedStocksByCategory[category.id] = [];
     });
 
     // Phân loại các phần tử của mảng
+
     stocks.forEach((stock) => {
-      CATEGORIES.forEach((category) => {
-        if (category.securities.includes(stock.ticker)) {
-          categorizedStocksByCategory[category.name].push({
-            ticker: stock.ticker,
-            time: stock.time,
-            value: stock.close,
-            displayName: category.displayName,
-          });
-        }
+      let found = false; // Biến cờ để kiểm soát luồng
+      categories.forEach((category) => {
+        if (found) return; // Nếu đã tìm thấy, thoát khỏi vòng lặp category
+        category.Securities.forEach((security) => {
+          if (found) return; // Nếu đã tìm thấy, thoát khỏi vòng lặp security
+          if (security.Symbol === stock.ticker) {
+            categorizedStocksByCategory[category.id].push({
+              ticker: stock.ticker,
+              time: stock.time,
+              value: stock.close,
+              displayName: category.name,
+            });
+            found = true; // Đặt cờ là true để thoát khỏi các vòng lặp lồng nhau
+          }
+        });
       });
     });
     const arrayFromObject = Object.entries(categorizedStocksByCategory).map(
@@ -243,7 +280,6 @@ export class OhlcService {
         data,
       }),
     );
-
     return arrayFromObject;
   }
 

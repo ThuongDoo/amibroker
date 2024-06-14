@@ -7,10 +7,17 @@ import { IntradayOhlc } from './model/intradayOhlc.model';
 import { Roc } from './model/roc.model';
 import { SsiModule } from 'src/ssi/ssi.module';
 import { Security } from 'src/ssi/model/security.model';
+import { Category } from 'src/category/model/category.model';
 
 @Module({
   imports: [
-    SequelizeModule.forFeature([DailyOhlc, IntradayOhlc, Roc, Security]),
+    SequelizeModule.forFeature([
+      DailyOhlc,
+      IntradayOhlc,
+      Roc,
+      Security,
+      Category,
+    ]),
     SsiModule,
   ],
   controllers: [OhlcController],

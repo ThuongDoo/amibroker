@@ -12,8 +12,9 @@ export class OhlcController {
   }
 
   @Get('/daily/update')
-  async updateDailyOhlc() {
-    return await this.ohlcService.updateDaily();
+  updateDailyOhlc() {
+    this.ohlcService.updateDaily();
+    return 'hah';
   }
 
   @Get('/intraday')

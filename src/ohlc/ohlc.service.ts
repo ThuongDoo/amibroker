@@ -59,16 +59,12 @@ export class OhlcService {
           { headers },
         )
         .then((res) => {
-          console.log(res.data);
-
           data = res.data.data;
           length = res.data.totalRecord;
         })
         .catch((e) => {
           console.log(e);
         });
-      console.log(data);
-
       const formattedData = data.map((item) => {
         return {
           symbol: item.Symbol,
@@ -92,19 +88,18 @@ export class OhlcService {
       return { data, length };
     };
 
-    const fetchDataEachSymbol = async ({ symbol, headers }) => {
-      let pageIndex = 1;
-      const newData = await fetchData({ symbol, pageIndex, headers });
-
-      const length = newData.length;
-
-      pageIndex++;
-
-      do {
-        await Utils.sleep(1000);
+    const fetchDataEachSymbol = async ({ symbol, headers, length }) => {
+      let pageIndex = 2;
+      while ((pageIndex - 1) * 1000 < length) {
         fetchData({ symbol, pageIndex, headers });
+        await Utils.sleep(1000);
         pageIndex++;
-      } while ((pageIndex - 1) * 1000 < length);
+      }
+    };
+
+    const fetchDataLength = async ({ symbol, headers, pageIndex, parent }) => {
+      const newData = await fetchData({ symbol, pageIndex, headers });
+      parent[symbol] = newData.length;
     };
 
     const token = this.ssiServie.getToken();
@@ -119,8 +114,16 @@ export class OhlcService {
     });
     await this.dailyOhlcModel.truncate();
 
+    const dataLengths: any = {};
     for (const symbol of symbols) {
-      await fetchDataEachSymbol({ symbol, headers });
+      fetchDataLength({ symbol, headers, pageIndex: 1, parent: dataLengths });
+      await Utils.sleep(1000);
+    }
+    console.log(dataLengths);
+
+    for (const symbol of symbols) {
+      await Utils.sleep(1000);
+      fetchDataEachSymbol({ symbol, headers, length: dataLengths[symbol] });
     }
   }
 
@@ -295,5 +298,10 @@ export class OhlcService {
     const newTime = new Date(time);
     newTime.setSeconds(0, 0); // Đặt giây và mili giây thành 0
     return newTime;
+  }
+
+  getCurrentTime() {
+    const now = new Date();
+    return format(now, 'HH:mm:ss');
   }
 }

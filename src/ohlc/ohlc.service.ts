@@ -61,31 +61,32 @@ export class OhlcService {
         .then((res) => {
           data = res.data.data;
           length = res.data.totalRecord;
+          const formattedData = data.map((item) => {
+            return {
+              symbol: item.Symbol,
+              time: Utils.convertToISODate(item.TradingDate),
+              market: item.Market,
+              open: item.Open,
+              high: item.High,
+              low: item.Low,
+              close: item.Close,
+              value: item.Value,
+              volume: item.Volume,
+            };
+          });
+          try {
+            this.dailyOhlcModel.bulkCreate(formattedData, {
+              ignoreDuplicates: true,
+            });
+          } catch (error) {
+            console.log(error);
+          }
         })
         .catch((e) => {
           console.log(e);
         });
-      const formattedData = data.map((item) => {
-        return {
-          symbol: item.Symbol,
-          time: Utils.convertToISODate(item.TradingDate),
-          market: item.Market,
-          open: item.Open,
-          high: item.High,
-          low: item.Low,
-          close: item.Close,
-          value: item.Value,
-          volume: item.Volume,
-        };
-      });
-      try {
-        this.dailyOhlcModel.bulkCreate(formattedData, {
-          ignoreDuplicates: true,
-        });
-      } catch (error) {
-        console.log(error);
-      }
-      return { data, length };
+
+      return { length };
     };
 
     const fetchDataEachSymbol = async ({ symbol, headers, length }) => {

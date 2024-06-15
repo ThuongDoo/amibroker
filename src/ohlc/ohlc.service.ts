@@ -4,7 +4,7 @@ import { DailyOhlc } from './model/dailyOhlc.model';
 import { IntradayOhlc } from './model/intradayOhlc.model';
 import { CATEGORIES } from 'src/shared/utils/contants';
 import { Roc } from './model/roc.model';
-import { format, subMonths, subYears } from 'date-fns';
+import { format, formatISO, subMonths, subYears } from 'date-fns';
 import { Op } from 'sequelize';
 import { SsiService } from 'src/ssi/ssi.service';
 import { Security } from 'src/ssi/model/security.model';
@@ -181,7 +181,12 @@ export class OhlcService {
         },
       });
       const ohlcsValues = ohlcs.map((item) => {
-        return { category: category.id, value: item.close, time: item.time };
+        return {
+          category: category.id,
+          value: item.close,
+          displayName: category.name,
+          time: formatISO(new Date(item.time)),
+        };
       });
       categorizedStocks.push({ category: category.id, data: ohlcsValues });
     }
@@ -237,6 +242,7 @@ export class OhlcService {
         const value = totalRoc / count;
         aggregatedStocks.push({
           category: item.category,
+          displayName: item.data[0].displayName,
           time,
           value,
         });
@@ -244,56 +250,6 @@ export class OhlcService {
     }
 
     return aggregatedStocks;
-  }
-
-  async stockToCategoryMap(stocks) {
-    const categorizedStocksByCategory = {};
-    const categories = await this.categoryModel.findAll({
-      attributes: ['id', 'name'],
-      include: [
-        {
-          model: this.securityModel, // Assuming 'securitiesModel' exists
-          as: 'Securities', // Optional alias for clarity (optional)
-          attributes: ['Symbol'], // Include only the 'Symbol' attribute
-        },
-      ],
-    });
-    // console.log(categories[0].Securities[0].dataValues);
-
-    // Khởi tạo các danh mục rỗng trong đối tượng kết quả
-    categories.forEach((category) => {
-      categorizedStocksByCategory[category.id] = [];
-    });
-
-    // Phân loại các phần tử của mảng
-
-    stocks.forEach((stock) => {
-      let found = false; // Biến cờ để kiểm soát luồng
-      categories.forEach((category) => {
-        if (found) return; // Nếu đã tìm thấy, thoát khỏi vòng lặp category
-        category.Securities.forEach((security) => {
-          if (found) return; // Nếu đã tìm thấy, thoát khỏi vòng lặp security
-          if (security.Symbol === stock.ticker) {
-            categorizedStocksByCategory[category.id].push({
-              ticker: stock.ticker,
-              time: stock.time,
-              value: stock.value,
-              displayName: category.name,
-            });
-            found = true; // Đặt cờ là true để thoát khỏi các vòng lặp lồng nhau
-          }
-        });
-      });
-    });
-    const arrayFromObject = Object.entries(categorizedStocksByCategory).map(
-      ([category, data]) => ({
-        category,
-        data,
-      }),
-    );
-    console.log(arrayFromObject);
-
-    return arrayFromObject;
   }
 
   //TODO: delete

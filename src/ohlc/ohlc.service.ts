@@ -170,25 +170,20 @@ export class OhlcService {
   async updateRoc() {
     const ohlcs = await this.dailyOhlcModel.findAll();
     const categorizedStocks = await this.stockToCategoryMap(ohlcs);
-    console.log('fisn');
+    console.log(categorizedStocks);
 
-    const averageStocksByTime = [];
-    // for (let i = 0; i < categorizedStocks.length; i++) {
-    //   // const chunkData = categorizedStocks.slice(i, i + chunkSize);
-    //   // const tempData = await Promise.all(
-    //   //   categorizedStocks
-    //   //     .map(async (item) => {
-    //   //       const roc = await this.groupAndAverageStocksByTime(item);
-    //   //       return roc;
-    //   //     })
-    //   //     .flat(),
-    //   // );
-    //   const tempData = await this.groupAndAverageStocksByTime(
-    //     categorizedStocks[i],
-    //   );
-    //   tempData.flat();
-    //   averageStocksByTime.push(...tempData);
-    // }
+    console.log('finish');
+
+    // const averageStocksByTime = await Promise.all(
+    //   categorizedStocks
+    //     .map((item) => {
+    //       const roc = this.groupAndAverageStocksByTime(item);
+    //       return roc;
+    //     })
+    //     .flat(),
+    // );
+
+    // console.log('finished');
 
     // try {
     //   await this.rocModel.truncate();
@@ -201,7 +196,6 @@ export class OhlcService {
     //       startIndex,
     //       startIndex + chunkSize,
     //     );
-
     //     const chunkResults = await this.rocModel.bulkCreate(chunkData, {
     //       ignoreDuplicates: true,
     //     });
@@ -214,7 +208,7 @@ export class OhlcService {
     // }
   }
 
-  async groupAndAverageStocksByTime(item) {
+  groupAndAverageStocksByTime(item) {
     const timeMap = {};
 
     // Group stocks by time and accumulate their values
@@ -257,7 +251,6 @@ export class OhlcService {
         },
       ],
     });
-    // console.log(categories[0].Securities[0].dataValues);
 
     // Khởi tạo các danh mục rỗng trong đối tượng kết quả
     categories.forEach((category) => {
@@ -265,25 +258,32 @@ export class OhlcService {
     });
 
     // Phân loại các phần tử của mảng
+    const chunkSize = 100000;
 
-    stocks.forEach((stock) => {
-      let found = false; // Biến cờ để kiểm soát luồng
-      categories.forEach((category) => {
-        if (found) return; // Nếu đã tìm thấy, thoát khỏi vòng lặp category
-        category.Securities.forEach((security) => {
-          if (found) return; // Nếu đã tìm thấy, thoát khỏi vòng lặp security
-          if (security.Symbol === stock.symbol) {
-            categorizedStocksByCategory[category.id].push({
-              symbol: stock.symbol,
-              time: stock.time,
-              value: stock.close,
-              displayName: category.name,
-            });
-            found = true; // Đặt cờ là true để thoát khỏi các vòng lặp lồng nhau
-          }
+    console.log(stocks.length);
+
+    for (let i = 0; i < stocks.length; i += chunkSize) {
+      const chunkData = stocks.slice(i, i + chunkSize);
+      await chunkData.forEach((stock) => {
+        let found = false; // Biến cờ để kiểm soát luồng
+        categories.forEach((category) => {
+          if (found) return; // Nếu đã tìm thấy, thoát khỏi vòng lặp category
+          category.Securities.forEach((security) => {
+            if (found) return; // Nếu đã tìm thấy, thoát khỏi vòng lặp security
+            if (security.Symbol === stock.symbol) {
+              categorizedStocksByCategory[category.id].push({
+                symbol: stock.symbol,
+                time: stock.time,
+                value: stock.close,
+                displayName: category.name,
+              });
+              found = true; // Đặt cờ là true để thoát khỏi các vòng lặp lồng nhau
+            }
+          });
         });
       });
-    });
+    }
+
     const arrayFromObject = Object.entries(categorizedStocksByCategory).map(
       ([category, data]) => ({
         category,

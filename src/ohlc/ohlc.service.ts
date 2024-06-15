@@ -175,7 +175,7 @@ export class OhlcService {
   async updateRoc() {
     const ohlcs = await this.dailyOhlcModel.findAll();
     const categorizedStocks = await this.stockToCategoryMap(ohlcs);
-    const averageStocksByTime = categorizedStocks
+    const averageStocksByTime = await categorizedStocks
       .map((item) => {
         const roc = this.groupAndAverageStocksByTime(item);
         return roc;

@@ -104,6 +104,8 @@ export class OhlcService {
       } while ((pageIndex - 1) * 1000 < length);
     };
 
+    console.log('hi');
+
     const token = this.ssiServie.getToken();
     const headers = {
       Authorization: token, // Thêm header Authorization

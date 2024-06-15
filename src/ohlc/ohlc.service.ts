@@ -182,6 +182,8 @@ export class OhlcService {
       })
       .flat();
 
+    console.log('hhi');
+
     try {
       await this.rocModel.truncate();
       const chunkSize = 2000; // Số lượng mục mỗi chunk

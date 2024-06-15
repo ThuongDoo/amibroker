@@ -282,6 +282,7 @@ export class OhlcService {
           });
         });
       });
+      console.log(i);
     }
 
     const arrayFromObject = Object.entries(categorizedStocksByCategory).map(
@@ -294,18 +295,6 @@ export class OhlcService {
   }
 
   //TODO: delete
-
-  async removeSecondsBulk(instances: IntradayOhlc[]) {
-    for (const instance of instances) {
-      instance.time = this.adjustTime(instance.time);
-    }
-  }
-
-  adjustTime(time: Date): Date {
-    const newTime = new Date(time);
-    newTime.setSeconds(0, 0); // Đặt giây và mili giây thành 0
-    return newTime;
-  }
 
   getCurrentTime() {
     const now = new Date();

@@ -168,9 +168,11 @@ export class OhlcService {
   }
 
   async updateRoc() {
+    console.log('start');
     const ohlcs = await this.dailyOhlcModel.findAll();
+    console.log('findall');
+
     const categorizedStocks = await this.stockToCategoryMap(ohlcs);
-    console.log(categorizedStocks);
 
     console.log('finish');
 
@@ -264,6 +266,8 @@ export class OhlcService {
 
     for (let i = 0; i < stocks.length; i += chunkSize) {
       const chunkData = stocks.slice(i, i + chunkSize);
+      console.log(i);
+
       await chunkData.forEach((stock) => {
         let found = false; // Biến cờ để kiểm soát luồng
         categories.forEach((category) => {
@@ -282,7 +286,6 @@ export class OhlcService {
           });
         });
       });
-      console.log(i);
     }
 
     const arrayFromObject = Object.entries(categorizedStocksByCategory).map(

@@ -34,7 +34,7 @@ export class OhlcService {
   intradayOhlcImported = [];
   roc = [];
 
-  async updateDaily(chunkIndex): Promise<any> {
+  async updateDaily(): Promise<any> {
     const fetchData = async ({ symbol, pageIndex, headers }) => {
       let data, length;
       const lookupRequest = {
@@ -105,8 +105,6 @@ export class OhlcService {
     };
 
     const token = this.ssiServie.getToken();
-    // const chunkSize = 100;
-    // const chunks = [];
     const headers = {
       Authorization: token, // Thêm header Authorization
     };
@@ -116,9 +114,6 @@ export class OhlcService {
     const symbols = await securities.map((item) => {
       return item.Symbol;
     });
-    // for (let i = 0; i < symbols.length; i += chunkSize) {
-    //   chunks.push(symbols.slice(i, i + chunkSize));
-    // }
     await this.dailyOhlcModel.truncate();
 
     const dataLengths: any = {};
@@ -175,14 +170,24 @@ export class OhlcService {
   async updateRoc() {
     const ohlcs = await this.dailyOhlcModel.findAll();
     const categorizedStocks = await this.stockToCategoryMap(ohlcs);
-    const averageStocksByTime = await categorizedStocks
-      .map(async (item) => {
-        const roc = await this.groupAndAverageStocksByTime(item);
-        return roc;
-      })
-      .flat();
+    const chunkSize = 100;
+    const averageStocksByTime = [];
+    for (let i = 0; i < categorizedStocks.length; i += chunkSize) {
+      const chunkData = categorizedStocks.slice(i, i + chunkSize);
+      const tempData = await Promise.all(
+        chunkData
+          .map((item) => {
+            const roc = this.groupAndAverageStocksByTime(item);
+            return roc;
+          })
+          .flat(),
+      );
+      averageStocksByTime.push(...tempData);
+    }
 
-    console.log('finished');
+    // console.log(averageStocksByTime);
+
+    // console.log('finished');
 
     try {
       await this.rocModel.truncate();
@@ -195,6 +200,7 @@ export class OhlcService {
           startIndex,
           startIndex + chunkSize,
         );
+
         const chunkResults = await this.rocModel.bulkCreate(chunkData, {
           ignoreDuplicates: true,
         });
@@ -202,40 +208,6 @@ export class OhlcService {
         startIndex += chunkSize;
       }
       return { length: results.length, data: results };
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  async hi(data) {
-    const categorizedStocks = await this.stockToCategoryMap(data);
-
-    const averageStocksByTime = categorizedStocks
-      .map((item) => {
-        const roc = this.groupAndAverageStocksByTime(item);
-        return roc;
-      })
-      .flat();
-
-    try {
-      await this.rocModel.truncate();
-      const chunkSize = 2000; // Số lượng mục mỗi chunk
-      const totalData = averageStocksByTime.length;
-      let startIndex = 0;
-      let results = [];
-      while (startIndex < totalData) {
-        const chunkData = averageStocksByTime.slice(
-          startIndex,
-          startIndex + chunkSize,
-        );
-        const chunkResults = await this.rocModel.bulkCreate(chunkData, {
-          ignoreDuplicates: true,
-        });
-        results = results.concat(chunkResults);
-        startIndex += chunkSize;
-      }
-      console.log('imported file length: ', results.length);
-      return results;
     } catch (error) {
       throw error;
     }

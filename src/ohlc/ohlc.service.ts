@@ -170,48 +170,51 @@ export class OhlcService {
   async updateRoc() {
     const ohlcs = await this.dailyOhlcModel.findAll();
     const categorizedStocks = await this.stockToCategoryMap(ohlcs);
+    console.log('fisn');
+
     const averageStocksByTime = [];
-    for (let i = 0; i < categorizedStocks.length; i++) {
-      // const chunkData = categorizedStocks.slice(i, i + chunkSize);
-      // const tempData = await Promise.all(
-      //   categorizedStocks
-      //     .map(async (item) => {
-      //       const roc = await this.groupAndAverageStocksByTime(item);
-      //       return roc;
-      //     })
-      //     .flat(),
-      // );
-      const tempData = await this.groupAndAverageStocksByTime(
-        categorizedStocks[i],
-      ).flat();
-      averageStocksByTime.push(...tempData);
-    }
+    // for (let i = 0; i < categorizedStocks.length; i++) {
+    //   // const chunkData = categorizedStocks.slice(i, i + chunkSize);
+    //   // const tempData = await Promise.all(
+    //   //   categorizedStocks
+    //   //     .map(async (item) => {
+    //   //       const roc = await this.groupAndAverageStocksByTime(item);
+    //   //       return roc;
+    //   //     })
+    //   //     .flat(),
+    //   // );
+    //   const tempData = await this.groupAndAverageStocksByTime(
+    //     categorizedStocks[i],
+    //   );
+    //   tempData.flat();
+    //   averageStocksByTime.push(...tempData);
+    // }
 
-    try {
-      await this.rocModel.truncate();
-      const chunkSize = 2000; // Số lượng mục mỗi chunk
-      const totalData = averageStocksByTime.length;
-      let startIndex = 0;
-      const results = [];
-      while (startIndex < totalData) {
-        const chunkData = averageStocksByTime.slice(
-          startIndex,
-          startIndex + chunkSize,
-        );
+    // try {
+    //   await this.rocModel.truncate();
+    //   const chunkSize = 2000; // Số lượng mục mỗi chunk
+    //   const totalData = averageStocksByTime.length;
+    //   let startIndex = 0;
+    //   const results = [];
+    //   while (startIndex < totalData) {
+    //     const chunkData = averageStocksByTime.slice(
+    //       startIndex,
+    //       startIndex + chunkSize,
+    //     );
 
-        const chunkResults = await this.rocModel.bulkCreate(chunkData, {
-          ignoreDuplicates: true,
-        });
-        results.push(...chunkResults);
-        startIndex += chunkSize;
-      }
-      return { length: results.length, data: results };
-    } catch (error) {
-      throw error;
-    }
+    //     const chunkResults = await this.rocModel.bulkCreate(chunkData, {
+    //       ignoreDuplicates: true,
+    //     });
+    //     results.push(...chunkResults);
+    //     startIndex += chunkSize;
+    //   }
+    //   return { length: results.length, data: results };
+    // } catch (error) {
+    //   throw error;
+    // }
   }
 
-  groupAndAverageStocksByTime(item) {
+  async groupAndAverageStocksByTime(item) {
     const timeMap = {};
 
     // Group stocks by time and accumulate their values

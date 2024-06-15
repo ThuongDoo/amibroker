@@ -172,19 +172,40 @@ export class OhlcService {
     return rocs;
   }
 
-  async importRoc(data) {
-    if (data.at(-1).header === 'done') {
-      data.pop();
-      this.roc.push(...data);
-      const newData = this.roc;
-      this.roc = [];
-      return await this.updateRoc(newData);
-    } else {
-      this.roc.push(...data);
+  async updateRoc() {
+    const ohlcs = await this.dailyOhlcModel.findAll();
+    const categorizedStocks = await this.stockToCategoryMap(ohlcs);
+    const averageStocksByTime = categorizedStocks
+      .map((item) => {
+        const roc = this.groupAndAverageStocksByTime(item);
+        return roc;
+      })
+      .flat();
+
+    try {
+      await this.rocModel.truncate();
+      const chunkSize = 2000; // Số lượng mục mỗi chunk
+      const totalData = averageStocksByTime.length;
+      let startIndex = 0;
+      const results = [];
+      while (startIndex < totalData) {
+        const chunkData = averageStocksByTime.slice(
+          startIndex,
+          startIndex + chunkSize,
+        );
+        const chunkResults = await this.rocModel.bulkCreate(chunkData, {
+          ignoreDuplicates: true,
+        });
+        results.push(...chunkResults);
+        startIndex += chunkSize;
+      }
+      return { length: results.length, data: results };
+    } catch (error) {
+      throw error;
     }
   }
 
-  async updateRoc(data) {
+  async hi(data) {
     const categorizedStocks = await this.stockToCategoryMap(data);
 
     const averageStocksByTime = categorizedStocks
@@ -276,9 +297,9 @@ export class OhlcService {
         if (found) return; // Nếu đã tìm thấy, thoát khỏi vòng lặp category
         category.Securities.forEach((security) => {
           if (found) return; // Nếu đã tìm thấy, thoát khỏi vòng lặp security
-          if (security.Symbol === stock.ticker) {
+          if (security.Symbol === stock.symbol) {
             categorizedStocksByCategory[category.id].push({
-              ticker: stock.ticker,
+              symbol: stock.symbol,
               time: stock.time,
               value: stock.close,
               displayName: category.name,

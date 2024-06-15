@@ -31,4 +31,9 @@ export class OhlcController {
   ) {
     return await this.ohlcService.getRoc(startDate, endDate);
   }
+
+  @Get('/roc/update')
+  async updateRoc() {
+    return await this.ohlcService.updateRoc();
+  }
 }

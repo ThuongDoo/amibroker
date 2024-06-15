@@ -170,24 +170,22 @@ export class OhlcService {
   async updateRoc() {
     const ohlcs = await this.dailyOhlcModel.findAll();
     const categorizedStocks = await this.stockToCategoryMap(ohlcs);
-    const chunkSize = 100;
     const averageStocksByTime = [];
-    for (let i = 0; i < categorizedStocks.length; i += chunkSize) {
-      const chunkData = categorizedStocks.slice(i, i + chunkSize);
-      const tempData = await Promise.all(
-        chunkData
-          .map((item) => {
-            const roc = this.groupAndAverageStocksByTime(item);
-            return roc;
-          })
-          .flat(),
-      );
+    for (let i = 0; i < categorizedStocks.length; i++) {
+      // const chunkData = categorizedStocks.slice(i, i + chunkSize);
+      // const tempData = await Promise.all(
+      //   categorizedStocks
+      //     .map(async (item) => {
+      //       const roc = await this.groupAndAverageStocksByTime(item);
+      //       return roc;
+      //     })
+      //     .flat(),
+      // );
+      const tempData = await this.groupAndAverageStocksByTime(
+        categorizedStocks[i],
+      ).flat();
       averageStocksByTime.push(...tempData);
     }
-
-    // console.log(averageStocksByTime);
-
-    // console.log('finished');
 
     try {
       await this.rocModel.truncate();

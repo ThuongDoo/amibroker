@@ -31,8 +31,8 @@ export class OhlcController {
   }
 
   @Get('/roc/update')
-  updateRoc() {
-    this.ohlcService.updateRoc();
+  async updateRoc() {
+    return await this.ohlcService.updateRoc();
     return { message: 'success' };
   }
 }

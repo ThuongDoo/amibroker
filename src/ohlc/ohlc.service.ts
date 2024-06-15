@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { DailyOhlc } from './model/dailyOhlc.model';
 import { IntradayOhlc } from './model/intradayOhlc.model';
@@ -28,7 +28,6 @@ export class OhlcService {
     private categoryModel: typeof Category,
     private ssiServie: SsiService,
   ) {}
-  private logger: Logger = new Logger('OHLC');
 
   dailyOhlcImported = [];
   intradayOhlcImported = [];
@@ -62,46 +61,47 @@ export class OhlcService {
         .then((res) => {
           data = res.data.data;
           length = res.data.totalRecord;
-          const formattedData = data.map((item) => {
-            return {
-              symbol: item.Symbol,
-              time: Utils.convertToISODate(item.TradingDate),
-              market: item.Market,
-              open: item.Open,
-              high: item.High,
-              low: item.Low,
-              close: item.Close,
-              value: item.Value,
-              volume: item.Volume,
-            };
-          });
-          try {
-            this.dailyOhlcModel.bulkCreate(formattedData, {
-              ignoreDuplicates: true,
-            });
-          } catch (error) {
-            console.log(error);
-          }
         })
         .catch((e) => {
           console.log(e);
         });
 
-      return { length };
-    };
-
-    const fetchDataEachSymbol = async ({ symbol, headers, length }) => {
-      let pageIndex = 2;
-      while ((pageIndex - 1) * 1000 < length) {
-        fetchData({ symbol, pageIndex, headers });
-        await Utils.sleep(1000);
-        pageIndex++;
+      const formattedData = data.map((item) => {
+        return {
+          symbol: item.Symbol,
+          time: Utils.convertToISODate(item.TradingDate),
+          market: item.Market,
+          open: item.Open,
+          high: item.High,
+          low: item.Low,
+          close: item.Close,
+          value: item.Value,
+          volume: item.Volume,
+        };
+      });
+      try {
+        this.dailyOhlcModel.bulkCreate(formattedData, {
+          ignoreDuplicates: true,
+        });
+      } catch (error) {
+        console.log(error);
       }
+      return { data, length };
     };
 
-    const fetchDataLength = async ({ symbol, headers, pageIndex, parent }) => {
+    const fetchDataEachSymbol = async ({ symbol, headers }) => {
+      let pageIndex = 1;
       const newData = await fetchData({ symbol, pageIndex, headers });
-      parent[symbol] = newData.length;
+
+      const length = newData.length;
+
+      pageIndex++;
+
+      do {
+        await Utils.sleep(1000);
+        fetchData({ symbol, pageIndex, headers });
+        pageIndex++;
+      } while ((pageIndex - 1) * 1000 < length);
     };
 
     const token = this.ssiServie.getToken();
@@ -116,20 +116,8 @@ export class OhlcService {
     });
     await this.dailyOhlcModel.truncate();
 
-    const dataLengths: any = {};
     for (const symbol of symbols) {
-      fetchDataLength({ symbol, headers, pageIndex: 1, parent: dataLengths });
-      await Utils.sleep(1000);
-    }
-    console.log(dataLengths);
-
-    for (const symbol of symbols) {
-      await Utils.sleep(1000);
-      await fetchDataEachSymbol({
-        symbol,
-        headers,
-        length: dataLengths[symbol],
-      });
+      await fetchDataEachSymbol({ symbol, headers });
     }
   }
 
@@ -168,46 +156,64 @@ export class OhlcService {
   }
 
   async updateRoc() {
-    console.log('start');
-    const ohlcs = await this.dailyOhlcModel.findAll();
-    console.log('findall');
+    const categories = await this.categoryModel.findAll({
+      attributes: ['id', 'name'],
+      include: [
+        {
+          model: this.securityModel, // Assuming 'securitiesModel' exists
+          as: 'Securities', // Optional alias for clarity (optional)
+          attributes: ['Symbol'], // Include only the 'Symbol' attribute
+        },
+      ],
+    });
 
-    const categorizedStocks = await this.stockToCategoryMap(ohlcs);
+    const categorizedStocks = [];
+    for (const category of categories) {
+      const securities = category.Securities.map((item) => {
+        return item.Symbol;
+      });
 
-    console.log('finish');
+      const ohlcs = await this.dailyOhlcModel.findAll({
+        where: {
+          symbol: {
+            [Op.in]: securities,
+          },
+        },
+      });
+      const ohlcsValues = ohlcs.map((item) => {
+        return { category: category.id, value: item.close, time: item.time };
+      });
+      categorizedStocks.push({ category: category.id, data: ohlcsValues });
+    }
 
-    // const averageStocksByTime = await Promise.all(
-    //   categorizedStocks
-    //     .map((item) => {
-    //       const roc = this.groupAndAverageStocksByTime(item);
-    //       return roc;
-    //     })
-    //     .flat(),
-    // );
-
-    // console.log('finished');
-
-    // try {
-    //   await this.rocModel.truncate();
-    //   const chunkSize = 2000; // Số lượng mục mỗi chunk
-    //   const totalData = averageStocksByTime.length;
-    //   let startIndex = 0;
-    //   const results = [];
-    //   while (startIndex < totalData) {
-    //     const chunkData = averageStocksByTime.slice(
-    //       startIndex,
-    //       startIndex + chunkSize,
-    //     );
-    //     const chunkResults = await this.rocModel.bulkCreate(chunkData, {
-    //       ignoreDuplicates: true,
-    //     });
-    //     results.push(...chunkResults);
-    //     startIndex += chunkSize;
-    //   }
-    //   return { length: results.length, data: results };
-    // } catch (error) {
-    //   throw error;
-    // }
+    const averageStocksByTime = categorizedStocks
+      .map((item) => {
+        const roc = this.groupAndAverageStocksByTime(item);
+        return roc;
+      })
+      .flat();
+    try {
+      await this.rocModel.truncate();
+      const chunkSize = 2000; // Số lượng mục mỗi chunk
+      const totalData = averageStocksByTime.length;
+      let startIndex = 0;
+      let results = [];
+      while (startIndex < totalData) {
+        const chunkData = averageStocksByTime.slice(
+          startIndex,
+          startIndex + chunkSize,
+        );
+        const chunkResults = await this.rocModel.bulkCreate(chunkData, {
+          ignoreDuplicates: true,
+        });
+        results = results.concat(chunkResults);
+        startIndex += chunkSize;
+      }
+      console.log('imported file length: ', results.length);
+      return { length: results.length, data: results };
+    } catch (error) {
+      throw error;
+    }
   }
 
   groupAndAverageStocksByTime(item) {
@@ -228,10 +234,9 @@ export class OhlcService {
     for (const time in timeMap) {
       if (timeMap.hasOwnProperty(time)) {
         const { totalRoc, count } = timeMap[time];
-        const value = totalRoc;
+        const value = totalRoc / count;
         aggregatedStocks.push({
           category: item.category,
-          displayName: item.data[0].displayName,
           time,
           value,
         });
@@ -253,6 +258,7 @@ export class OhlcService {
         },
       ],
     });
+    // console.log(categories[0].Securities[0].dataValues);
 
     // Khởi tạo các danh mục rỗng trong đối tượng kết quả
     categories.forEach((category) => {
@@ -260,47 +266,47 @@ export class OhlcService {
     });
 
     // Phân loại các phần tử của mảng
-    const chunkSize = 100000;
 
-    console.log(stocks.length);
-
-    for (let i = 0; i < stocks.length; i += chunkSize) {
-      const chunkData = stocks.slice(i, i + chunkSize);
-      console.log(i);
-
-      await chunkData.forEach((stock) => {
-        let found = false; // Biến cờ để kiểm soát luồng
-        categories.forEach((category) => {
-          if (found) return; // Nếu đã tìm thấy, thoát khỏi vòng lặp category
-          category.Securities.forEach((security) => {
-            if (found) return; // Nếu đã tìm thấy, thoát khỏi vòng lặp security
-            if (security.Symbol === stock.symbol) {
-              categorizedStocksByCategory[category.id].push({
-                symbol: stock.symbol,
-                time: stock.time,
-                value: stock.close,
-                displayName: category.name,
-              });
-              found = true; // Đặt cờ là true để thoát khỏi các vòng lặp lồng nhau
-            }
-          });
+    stocks.forEach((stock) => {
+      let found = false; // Biến cờ để kiểm soát luồng
+      categories.forEach((category) => {
+        if (found) return; // Nếu đã tìm thấy, thoát khỏi vòng lặp category
+        category.Securities.forEach((security) => {
+          if (found) return; // Nếu đã tìm thấy, thoát khỏi vòng lặp security
+          if (security.Symbol === stock.ticker) {
+            categorizedStocksByCategory[category.id].push({
+              ticker: stock.ticker,
+              time: stock.time,
+              value: stock.value,
+              displayName: category.name,
+            });
+            found = true; // Đặt cờ là true để thoát khỏi các vòng lặp lồng nhau
+          }
         });
       });
-    }
-
+    });
     const arrayFromObject = Object.entries(categorizedStocksByCategory).map(
       ([category, data]) => ({
         category,
         data,
       }),
     );
+    console.log(arrayFromObject);
+
     return arrayFromObject;
   }
 
   //TODO: delete
 
-  getCurrentTime() {
-    const now = new Date();
-    return format(now, 'HH:mm:ss');
+  async removeSecondsBulk(instances: IntradayOhlc[]) {
+    for (const instance of instances) {
+      instance.time = this.adjustTime(instance.time);
+    }
+  }
+
+  adjustTime(time: Date): Date {
+    const newTime = new Date(time);
+    newTime.setSeconds(0, 0); // Đặt giây và mili giây thành 0
+    return newTime;
   }
 }

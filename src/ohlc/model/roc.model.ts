@@ -16,9 +16,6 @@ export class Roc extends Model {
   @Column(DataType.DATEONLY)
   time: Date;
 
-  @Column
-  displayName: string;
-
   @Column(DataType.FLOAT)
   value: number;
 }

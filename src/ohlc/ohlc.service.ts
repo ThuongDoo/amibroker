@@ -230,11 +230,9 @@ export class OhlcService {
     });
     if (isTruncate) await this.intradayOhlcModel.truncate();
 
-    await fetchDataEachSymbol({ symbol: 'ACB', headers });
-
-    // for (const symbol of symbols) {
-    //   await fetchDataEachSymbol({ symbol, headers });
-    // }
+    for (const symbol of symbols) {
+      await fetchDataEachSymbol({ symbol, headers });
+    }
   }
 
   async getDaily(symbol: string) {
@@ -372,7 +370,7 @@ export class OhlcService {
     return aggregatedStocks;
   }
 
-  @Cron('53 22 * * *')
+  @Cron('0 10 * * *')
   async handleCron() {
     const currentDate = new Date();
     const toDate = format(currentDate, 'dd/MM/yyyy');

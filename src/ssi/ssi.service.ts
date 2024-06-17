@@ -50,7 +50,7 @@ export class SsiService {
     client.bind(client.events.onConnected, function () {
       client.switchChannel(
         'MI:ALL,F:ALL,X:ALL,X-QUOTE:ALL,X-TRADE:ALL,B:ALL,R:ALL',
-        // 'R:ALL',
+        // 'X:SSI',
       );
     });
     client.start();

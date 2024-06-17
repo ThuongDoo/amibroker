@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { OhlcService } from './ohlc.service';
 import { SkipThrottle } from '@nestjs/throttler';
+import { format, subDays } from 'date-fns';
 
 @Controller('ohlc')
 export class OhlcController {
@@ -20,6 +21,15 @@ export class OhlcController {
   @Get('/intraday')
   async getIntradayOhlc(@Query('ticker') ticker: string) {
     return await this.ohlcService.getIntraday(ticker);
+  }
+
+  @Get('/intraday/update')
+  updateIntradayOhlc() {
+    const currentDate = new Date();
+    const toDate = format(currentDate, 'dd/MM/yyyy');
+    const fromDate = format(subDays(currentDate, 30), 'dd/MM/yyyy');
+    this.ohlcService.updateIntraday(fromDate, toDate);
+    return 'hah';
   }
 
   @Get('/roc')

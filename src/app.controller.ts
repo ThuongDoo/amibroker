@@ -1,5 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
+import { format } from 'date-fns';
 
 @Controller()
 export class AppController {
@@ -14,5 +15,11 @@ export class AppController {
   getMemoryUsage(): any {
     const usage = process.memoryUsage();
     return usage;
+  }
+
+  @Get('time')
+  getCurrentDateTime(): string {
+    const currentDateTime = new Date();
+    return format(currentDateTime, 'yyyy-MM-dd HH:mm:ss');
   }
 }

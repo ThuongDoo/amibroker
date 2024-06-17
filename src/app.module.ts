@@ -27,6 +27,7 @@ import { UserSecurity } from './user/model/userSecurity.model';
 import { CategoryModule } from './category/category.module';
 import { Category } from './category/model/category.model';
 import { CategorySecurity } from './category/model/categorySecurity.model';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { CategorySecurity } from './category/model/categorySecurity.model';
       autoLoadModels: true,
       synchronize: true,
     }),
+    ScheduleModule.forRoot(),
     UserModule,
     AuthModule,
     SsiModule,

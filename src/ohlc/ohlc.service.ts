@@ -240,7 +240,7 @@ export class OhlcService {
       where: { symbol: symbol },
       order: [['time', 'ASC']],
     });
-    console.log('hiih');
+    // console.log('hiih');
 
     return { length: ohlcs.length, data: ohlcs };
   }

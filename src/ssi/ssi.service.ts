@@ -133,6 +133,7 @@ export class SsiService {
   async getOrderBook(symbol) {
     const orderBook = await this.orderBookModel.findAll({ where: { symbol } });
     return JSON.stringify(orderBook);
+    console.log('hi');
   }
 
   getFData() {

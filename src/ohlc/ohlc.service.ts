@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { DailyOhlc } from './model/dailyOhlc.model';
 import { IntradayOhlc } from './model/intradayOhlc.model';
@@ -34,7 +34,8 @@ export class OhlcService {
     private securityModel: typeof Security,
     @InjectModel(Category)
     private categoryModel: typeof Category,
-    private ssiServie: SsiService,
+    @Inject(forwardRef(() => SsiService))
+    private readonly ssiService: SsiService,
   ) {}
 
   dailyOhlcImported = [];
@@ -45,7 +46,14 @@ export class OhlcService {
     fromDate = '01/01/2000',
     isTruncate: boolean = true,
   ): Promise<any> {
-    const fetchData = async ({ symbol, pageIndex, headers }) => {
+    const fetchData = async ({
+      symbol,
+      pageIndex,
+      headers,
+    }): Promise<{
+      data: any;
+      length: any;
+    }> => {
       let data, length;
       const lookupRequest = {
         symbol: symbol,
@@ -99,22 +107,31 @@ export class OhlcService {
       return { data, length };
     };
 
-    const fetchDataEachSymbol = async ({ symbol, headers }) => {
-      let pageIndex = 1;
-      const newData = await fetchData({ symbol, pageIndex, headers });
+    const fetchDataEachSymbol = async ({
+      symbol,
+      headers,
+      length,
+    }): Promise<void> => {
+      let pageIndex = 2;
 
-      const length = newData.length;
-
-      pageIndex++;
-
-      do {
+      while ((pageIndex - 1) * 1000 < length) {
         await Utils.sleep(1000);
         fetchData({ symbol, pageIndex, headers });
         pageIndex++;
-      } while ((pageIndex - 1) * 1000 < length);
+      }
     };
 
-    const token = this.ssiServie.getToken();
+    const fetchDataLength = async ({
+      symbol,
+      headers,
+      dataLengths,
+    }): Promise<void> => {
+      const data = await fetchData({ symbol, pageIndex: 1, headers });
+      dataLengths[symbol] = data.length;
+    };
+
+    const dataLengths = {};
+    const token = this.ssiService.getToken();
     const headers = {
       Authorization: token, // Thêm header Authorization
     };
@@ -129,7 +146,15 @@ export class OhlcService {
     }
 
     for (const symbol of symbols) {
-      await fetchDataEachSymbol({ symbol, headers });
+      await fetchDataLength({ symbol, headers, dataLengths });
+    }
+
+    for (const symbol of symbols) {
+      await fetchDataEachSymbol({
+        symbol,
+        headers,
+        length: dataLengths[symbol],
+      });
     }
   }
 
@@ -202,22 +227,27 @@ export class OhlcService {
       return { data, length };
     };
 
-    const fetchDataEachSymbol = async ({ symbol, headers }) => {
-      let pageIndex = 1;
-      const newData = await fetchData({ symbol, pageIndex, headers });
+    const fetchDataEachSymbol = async ({ symbol, headers, length }) => {
+      let pageIndex = 2;
 
-      const length = newData.length;
-
-      pageIndex++;
-
-      do {
+      while ((pageIndex - 1) * 1000 < length) {
         await Utils.sleep(1000);
         fetchData({ symbol, pageIndex, headers });
         pageIndex++;
-      } while ((pageIndex - 1) * 1000 < length);
+      }
     };
 
-    const token = this.ssiServie.getToken();
+    const fetchDataLength = async ({
+      symbol,
+      headers,
+      dataLengths,
+    }): Promise<void> => {
+      const data = await fetchData({ symbol, pageIndex: 1, headers });
+      dataLengths[symbol] = data.length;
+    };
+
+    const token = this.ssiService.getToken();
+    const dataLengths = {};
 
     const headers = {
       Authorization: token, // Thêm header Authorization
@@ -231,7 +261,15 @@ export class OhlcService {
     if (isTruncate) await this.intradayOhlcModel.truncate();
 
     for (const symbol of symbols) {
-      await fetchDataEachSymbol({ symbol, headers });
+      await fetchDataLength({ symbol, headers, dataLengths });
+    }
+
+    for (const symbol of symbols) {
+      await fetchDataEachSymbol({
+        symbol,
+        headers,
+        length: dataLengths[symbol],
+      });
     }
   }
 
@@ -240,7 +278,6 @@ export class OhlcService {
       where: { symbol: symbol },
       order: [['time', 'ASC']],
     });
-    // console.log('hiih');
 
     return { length: ohlcs.length, data: ohlcs };
   }
@@ -341,6 +378,24 @@ export class OhlcService {
     }
   }
 
+  updateOneIntraday(item) {
+    const dateTimeString = `${item.TradingDate} ${item.Time}`;
+    const parsedDate = parse(dateTimeString, 'dd/MM/yyyy HH:mm:ss', new Date());
+    this.intradayOhlcModel.create(
+      {
+        symbol: item.Symbol,
+        time: parsedDate,
+        open: item.Open,
+        high: item.High,
+        low: item.Low,
+        close: item.Close,
+        volume: item.Volume,
+        value: item.Value,
+      },
+      { ignoreDuplicates: true },
+    );
+  }
+
   groupAndAverageStocksByTime(item) {
     const timeMap = {};
 
@@ -374,10 +429,6 @@ export class OhlcService {
 
   @Cron('0 10 * * *')
   async handleCron() {
-    const currentDate = new Date();
-    const toDate = format(currentDate, 'dd/MM/yyyy');
-    await this.updateDaily(toDate, false);
-    await this.updateIntraday(toDate, toDate, false);
     await this.updateRoc(false, true);
 
     // Thực hiện các hành động bạn muốn ở đây

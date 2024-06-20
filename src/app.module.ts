@@ -59,6 +59,8 @@ import { ScheduleModule } from '@nestjs/schedule';
       ],
       autoLoadModels: true,
       synchronize: true,
+      //TODO: DELETE
+      logging: false,
     }),
     ScheduleModule.forRoot(),
     UserModule,

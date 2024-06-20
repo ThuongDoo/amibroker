@@ -74,6 +74,13 @@ export class EventsGateway
     client.emit('ssi_r_update', { data: data });
   }
 
+  @SubscribeMessage('ssi_order_book_request')
+  async handleUpdateOrderBook(client: Socket, payload: any) {
+    const data = await this.ssiService.getOrderBook(payload);
+
+    client.emit('ssi_order_book_update', { data: data });
+  }
+
   afterInit(server: Server) {
     // console.log(server);
   }

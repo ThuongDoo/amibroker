@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { endpoints } from 'src/shared/utils/api';
 import * as client from './ssi-fcdata';
 import api from '../shared/utils/api';
@@ -8,6 +8,8 @@ import { IndexSecurity } from './model/indexSecurity.model';
 import { Index } from './model/index.model';
 import { Op } from 'sequelize';
 import { Utils } from 'src/shared/utils/utils';
+import { OhlcService } from 'src/ohlc/ohlc.service';
+import { OrderBook } from './model/orderBook';
 
 @Injectable()
 export class SsiService {
@@ -21,12 +23,16 @@ export class SsiService {
   private miData: any = {};
 
   constructor(
+    @Inject(forwardRef(() => OhlcService))
+    private readonly ohlcService: OhlcService,
     @InjectModel(Security)
     private securityModel: typeof Security,
     @InjectModel(IndexSecurity)
     private indexSecurityModel: typeof IndexSecurity,
     @InjectModel(Index)
     private indexModel: typeof Index,
+    @InjectModel(OrderBook)
+    private orderBookModel: typeof OrderBook,
   ) {}
 
   async onModuleInit() {
@@ -94,9 +100,11 @@ export class SsiService {
         this.quoteData[data.Sybmol] = data;
         break;
       case 'X-TRADE':
+        this.updateOrderBook(data);
         this.tradeData[data.Symbol] = data;
         break;
       case 'B':
+        this.ohlcService.updateOneIntraday(data);
         this.bData[data.Symbol] = data;
         break;
       case 'R':
@@ -106,6 +114,25 @@ export class SsiService {
         this.miData[data.IndexId] = data;
         break;
     }
+  }
+
+  updateOrderBook(data) {
+    this.orderBookModel.create(
+      {
+        symbol: data.Symbol,
+        time: data.Time,
+        lastPrice: data.LastPrice,
+        lastVol: data.LastVol,
+        tradingSession: data.TradingSession,
+        side: data.Side,
+      },
+      { ignoreDuplicates: true },
+    );
+  }
+
+  async getOrderBook(symbol) {
+    const orderBook = await this.orderBookModel.findAll({ where: { symbol } });
+    return JSON.stringify(orderBook);
   }
 
   getFData() {

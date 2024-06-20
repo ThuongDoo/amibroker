@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { OhlcController } from './ohlc.controller';
 import { OhlcService } from './ohlc.service';
 import { SequelizeModule } from '@nestjs/sequelize';
@@ -18,7 +18,7 @@ import { Category } from 'src/category/model/category.model';
       Security,
       Category,
     ]),
-    SsiModule,
+    forwardRef(() => SsiModule),
   ],
   controllers: [OhlcController],
   providers: [OhlcService],

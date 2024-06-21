@@ -17,6 +17,8 @@ export class CategoryService {
   ) {}
 
   async updateCategory(categories, securities) {
+    await this.categorySecurityModel.truncate();
+    await this.categoryModel.truncate();
     try {
       await this.categoryModel.bulkCreate(categories, {
         updateOnDuplicate: ['name'],
@@ -24,8 +26,6 @@ export class CategoryService {
     } catch (error) {
       this.logger.error('Validation error', error.errors);
     }
-
-    await this.categorySecurityModel.truncate();
 
     try {
       await this.categorySecurityModel.bulkCreate(securities, {

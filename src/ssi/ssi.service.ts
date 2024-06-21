@@ -461,6 +461,6 @@ export class SsiService {
 
   @Cron('0 1 * * *')
   deleteDailyOrderBook() {
-    this.orderBookModel.destroy();
+    this.orderBookModel.truncate();
   }
 }

@@ -28,6 +28,7 @@ import { CategoryModule } from './category/category.module';
 import { Category } from './category/model/category.model';
 import { CategorySecurity } from './category/model/categorySecurity.model';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ArticleModule } from './article/article.module';
 
 @Module({
   imports: [
@@ -72,6 +73,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     EventsModule,
     OhlcModule,
     CategoryModule,
+    ArticleModule,
   ],
   controllers: [AppController],
   providers: [

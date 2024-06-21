@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/sequelize';
 import { Category } from './model/category.model';
 import { CategorySecurity } from './model/categorySecurity.model';
 import { Security } from 'src/ssi/model/security.model';
+import { Roc } from 'src/ohlc/model/roc.model';
 
 @Injectable()
 export class CategoryService {
@@ -14,11 +15,14 @@ export class CategoryService {
     private categorySecurityModel: typeof CategorySecurity,
     @InjectModel(Security)
     private securityModel: typeof Security,
+    @InjectModel(Roc)
+    private rocModel: typeof Roc,
   ) {}
 
   async updateCategory(categories, securities) {
     await this.categorySecurityModel.truncate();
-    await this.categoryModel.truncate();
+    await this.categoryModel.destroy({ where: {}, truncate: false });
+    await this.rocModel.truncate();
     try {
       await this.categoryModel.bulkCreate(categories, {
         updateOnDuplicate: ['name'],

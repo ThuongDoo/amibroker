@@ -10,6 +10,7 @@ import { Op } from 'sequelize';
 import { Utils } from 'src/shared/utils/utils';
 import { OhlcService } from 'src/ohlc/ohlc.service';
 import { OrderBook } from './model/orderBook';
+import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class SsiService {
@@ -56,7 +57,7 @@ export class SsiService {
     client.bind(client.events.onConnected, function () {
       client.switchChannel(
         'MI:ALL,F:ALL,X:ALL,X-QUOTE:ALL,X-TRADE:ALL,B:ALL,R:ALL',
-        // 'X:SSI',
+        // 'X-TRADE:ALL,B:ALL',
       );
     });
     client.start();
@@ -181,6 +182,10 @@ export class SsiService {
     return JSON.stringify(this.rData[security]);
   }
 
+  async getBData(security: string) {
+    return JSON.stringify(this.bData[security]);
+  }
+
   async importSecurity() {
     const fetchData = async (pageIndex, pageSize, token) => {
       let data;
@@ -244,13 +249,82 @@ export class SsiService {
       } catch (error) {
         console.log(error);
       }
-      console.log('load', pageIndex);
       pageIndex++;
 
       await Utils.sleep(1000);
       // code block to be executed
     } while ((pageIndex - 1) * pageSize < length);
     return { length: data.length, data };
+    // return data;
+  }
+
+  async importVnindex() {
+    const fetchData = async (pageIndex, pageSize, token) => {
+      let data;
+      const lookupRequest = {
+        market: 'HOSE',
+        pageIndex: pageIndex,
+        pageSize: pageSize,
+        headers: token,
+      };
+
+      await api
+        .get(
+          endpoints.SECURITIES_LIST +
+            '?lookupRequest.market=' +
+            lookupRequest.market +
+            '&lookupRequest.pageIndex=' +
+            lookupRequest.pageIndex +
+            '&lookupRequest.pageSize=' +
+            lookupRequest.pageSize,
+          { headers },
+        )
+        .then((res) => {
+          data = res.data;
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+      return data;
+    };
+    const token = this.getToken();
+
+    const headers = {
+      Authorization: token, // Thêm header Authorization
+    };
+
+    const pageSize = 1000;
+    const pageIndex = 1;
+
+    const response = await fetchData(pageIndex, pageSize, token);
+
+    console.log(response);
+
+    try {
+      await this.indexModel.create({
+        IndexCode: 'VNINDEX',
+        IndexName: 'VNINDEX',
+        Exchange: 'HOSE',
+      });
+    } catch (error) {
+      console.log(error);
+    }
+    const indexSecurities = response.data.map((item) => {
+      return {
+        indexCode: 'VNINDEX',
+        symbol: item.Symbol,
+      };
+    });
+
+    try {
+      const a = await this.indexSecurityModel.bulkCreate(indexSecurities, {
+        ignoreDuplicates: true,
+      });
+      return { length: a.length, a };
+    } catch (error) {
+      console.log(error);
+    }
+
     // return data;
   }
 
@@ -298,8 +372,6 @@ export class SsiService {
         !this.indexModel.getAttributes()[key].unique,
     );
 
-    console.log(fields);
-
     let length;
     do {
       const response = await fetchData(pageIndex, pageSize, token);
@@ -307,7 +379,6 @@ export class SsiService {
       length = response.totalRecord;
       inputData.push(...response.data);
 
-      console.log('load', pageIndex);
       pageIndex++;
 
       await Utils.sleep(1000);
@@ -352,7 +423,6 @@ export class SsiService {
       return { length: results.length, data: results };
     } else {
       const indexArray = indexes.split(',');
-      console.log(indexArray);
 
       if (indexArray.length === 1) {
         const results = await this.securityModel.findOne({
@@ -382,5 +452,15 @@ export class SsiService {
       }));
       return { length: groupedArray.length, data: groupedArray };
     }
+  }
+
+  @Cron('0 9 * * *')
+  updateDailyOhlc() {
+    this.ohlcService.updateDaily(Object.values(this.bData));
+  }
+
+  @Cron('0 1 * * *')
+  deleteDailyOrderBook() {
+    this.orderBookModel.destroy();
   }
 }

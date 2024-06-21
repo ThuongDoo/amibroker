@@ -8,6 +8,7 @@ import { Roc } from './model/roc.model';
 import { SsiModule } from 'src/ssi/ssi.module';
 import { Security } from 'src/ssi/model/security.model';
 import { Category } from 'src/category/model/category.model';
+import { Index } from 'src/ssi/model/index.model';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { Category } from 'src/category/model/category.model';
       Roc,
       Security,
       Category,
+      Index,
     ]),
     forwardRef(() => SsiModule),
   ],

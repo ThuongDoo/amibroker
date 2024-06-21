@@ -2,16 +2,8 @@ import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { DailyOhlc } from './model/dailyOhlc.model';
 import { IntradayOhlc } from './model/intradayOhlc.model';
-import { CATEGORIES } from 'src/shared/utils/contants';
 import { Roc } from './model/roc.model';
-import {
-  format,
-  formatISO,
-  parse,
-  subDays,
-  subMonths,
-  subYears,
-} from 'date-fns';
+import { formatISO, parse } from 'date-fns';
 import { Op } from 'sequelize';
 import { SsiService } from 'src/ssi/ssi.service';
 import { Security } from 'src/ssi/model/security.model';
@@ -20,6 +12,7 @@ import api from '../shared/utils/api';
 import { Utils } from 'src/shared/utils/utils';
 import { Category } from 'src/category/model/category.model';
 import { Cron } from '@nestjs/schedule';
+import { Index } from 'src/ssi/model/index.model';
 
 @Injectable()
 export class OhlcService {
@@ -34,6 +27,8 @@ export class OhlcService {
     private securityModel: typeof Security,
     @InjectModel(Category)
     private categoryModel: typeof Category,
+    @InjectModel(Index)
+    private indexModel: typeof Index,
     @Inject(forwardRef(() => SsiService))
     private readonly ssiService: SsiService,
   ) {}
@@ -42,7 +37,7 @@ export class OhlcService {
   intradayOhlcImported = [];
   roc = [];
 
-  async updateDaily(
+  async importDaily(
     fromDate = '01/01/2000',
     isTruncate: boolean = true,
   ): Promise<any> {
@@ -158,7 +153,7 @@ export class OhlcService {
     }
   }
 
-  async updateIntraday(
+  async importIntraday(
     fromDate: string,
     toDate: string,
     isTruncate: boolean = true,
@@ -307,7 +302,7 @@ export class OhlcService {
   }
 
   async updateRoc(isTruncate: boolean = true, isDaily: boolean = false) {
-    const categories = await this.categoryModel.findAll({
+    const tempCategories = await this.categoryModel.findAll({
       attributes: ['id', 'name'],
       include: [
         {
@@ -317,6 +312,24 @@ export class OhlcService {
         },
       ],
     });
+
+    const indices = await this.indexModel.findOne({
+      where: { indexCode: 'VNINDEX' },
+      include: [
+        {
+          model: this.securityModel, // Assuming 'securitiesModel' exists
+          as: 'Securities', // Optional alias for clarity (optional)
+          attributes: ['Symbol'], // Include only the 'Symbol' attribute
+        },
+      ],
+    });
+    const vnindex = {
+      id: indices.IndexCode,
+      name: indices.IndexName,
+      Securities: indices.Securities,
+    };
+
+    const categories = [...tempCategories, vnindex];
 
     const startDate = new Date();
     if (!isDaily) startDate.setFullYear(startDate.getFullYear() - 5);
@@ -347,7 +360,6 @@ export class OhlcService {
       });
       categorizedStocks.push({ category: category.id, data: ohlcsValues });
     }
-
     const averageStocksByTime = categorizedStocks
       .map((item) => {
         const roc = this.groupAndAverageStocksByTime(item);
@@ -394,6 +406,25 @@ export class OhlcService {
       },
       { ignoreDuplicates: true },
     );
+  }
+
+  async updateDaily(data) {
+    const formattedData = await data.map((item) => {
+      return {
+        symbol: item.Symbol,
+        time: Utils.convertToISODate(item.TradingDate),
+        market: item.Market,
+        open: item.Open,
+        high: item.High,
+        low: item.Low,
+        close: item.Close,
+        value: item.Value,
+        volume: item.Volume,
+      };
+    });
+    await this.dailyOhlcModel.bulkCreate(formattedData, {
+      ignoreDuplicates: true,
+    });
   }
 
   groupAndAverageStocksByTime(item) {

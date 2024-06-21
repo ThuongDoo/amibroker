@@ -14,6 +14,11 @@ export class SsiController {
     return await this.ssiService.importIndexComponent();
   }
 
+  @Get('import/vnindex')
+  async importVnindex() {
+    return await this.ssiService.importVnindex();
+  }
+
   @Get('security')
   async getSecurity(@Query('indexes') indexes: string) {
     return await this.ssiService.getSecurity(indexes);

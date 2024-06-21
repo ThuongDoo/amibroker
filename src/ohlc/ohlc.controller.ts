@@ -14,7 +14,7 @@ export class OhlcController {
 
   @Get('/daily/update')
   updateDailyOhlc() {
-    this.ohlcService.updateDaily();
+    this.ohlcService.importDaily();
     return 'hah';
   }
 
@@ -28,7 +28,7 @@ export class OhlcController {
     const currentDate = new Date();
     const toDate = format(currentDate, 'dd/MM/yyyy');
     const fromDate = format(subDays(currentDate, 30), 'dd/MM/yyyy');
-    this.ohlcService.updateIntraday(fromDate, toDate);
+    this.ohlcService.importIntraday(fromDate, toDate);
     return 'hah';
   }
 

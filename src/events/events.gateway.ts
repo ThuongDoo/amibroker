@@ -44,6 +44,13 @@ export class EventsGateway
     client.emit('update_filtered_stock_data', { data });
   }
 
+  @SubscribeMessage('stock_request')
+  async handleUpdateStock(client: Socket, payload: any) {
+    const data = await this.stockService.getStockByName(payload);
+
+    client.emit('stock_update', { data });
+  }
+
   @SubscribeMessage('ssi_mi_request')
   async handleUpdateMi(client: Socket, payload: any) {
     const data = this.ssiService.getMiData(payload);
@@ -79,6 +86,14 @@ export class EventsGateway
     const data = await this.ssiService.getOrderBook(payload);
 
     client.emit('ssi_order_book_update', { data: data });
+  }
+
+  @SubscribeMessage('ssi_b_request')
+  async handleUpdateB(client: Socket, payload: any) {
+    const data = await this.ssiService.getBData(payload);
+    console.log('hi', data);
+
+    client.emit('ssi_b_update', { data: data });
   }
 
   afterInit(server: Server) {

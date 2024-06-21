@@ -11,6 +11,7 @@ import { Utils } from 'src/shared/utils/utils';
 import { OhlcService } from 'src/ohlc/ohlc.service';
 import { OrderBook } from './model/orderBook';
 import { Cron } from '@nestjs/schedule';
+import { format, subDays } from 'date-fns';
 
 @Injectable()
 export class SsiService {
@@ -452,6 +453,18 @@ export class SsiService {
       }));
       return { length: groupedArray.length, data: groupedArray };
     }
+  }
+
+  async changeAll() {
+    const currentDate = new Date();
+    const toDate = format(currentDate, 'dd/MM/yyyy');
+    const fromDate = format(subDays(currentDate, 30), 'dd/MM/yyyy');
+    // await this.importSecurity();
+    // await this.importIndexComponent();
+    await this.importVnindex();
+    await this.ohlcService.importDaily();
+    await this.ohlcService.importIntraday(fromDate, toDate);
+    await this.ohlcService.updateRoc();
   }
 
   @Cron('0 9 * * *')

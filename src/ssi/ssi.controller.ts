@@ -33,4 +33,9 @@ export class SsiController {
   async getMiData(@Query('indexes') indexes: string) {
     return this.ssiService.getMiData(indexes);
   }
+
+  @Get('changeAll')
+  changeAll() {
+    return this.ssiService.changeAll();
+  }
 }

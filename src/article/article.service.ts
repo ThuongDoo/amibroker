@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { ArticleCategory } from './model/articleCategory';
+import { ArticleCategory } from './model/articleCategory.model';
+import { UpdateCategoryDto } from './dto/update-category.dto';
 
 @Injectable()
 export class ArticleService {
@@ -9,7 +10,29 @@ export class ArticleService {
     private articleCategoryModel: typeof ArticleCategory,
   ) {}
 
-  createCategory(name: string) {}
+  async createCategory(name: string) {
+    try {
+      const article = await this.articleCategoryModel.create(
+        { name: name },
+        { ignoreDuplicates: true },
+      );
+      return { message: 'success' };
+    } catch (e) {
+      console.log(e);
+    }
+  }
 
-  getCategory(ids: string) {}
+  async getCategory() {
+    const articles = await this.articleCategoryModel.findAll();
+    return { data: articles };
+  }
+
+  async updateCategory(data: UpdateCategoryDto, id: string) {
+    const category = await this.articleCategoryModel.findByPk(id);
+    if (!category) {
+      throw new NotFoundException(`Category with ${id} is not exist`);
+    }
+    await category.update(data);
+    return category;
+  }
 }

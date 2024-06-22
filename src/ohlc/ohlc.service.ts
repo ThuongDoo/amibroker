@@ -49,7 +49,8 @@ export class OhlcService {
       data: any;
       length: any;
     }> => {
-      let data, length;
+      let data = [],
+        length;
       const lookupRequest = {
         symbol: symbol,
         pageIndex: pageIndex,
@@ -74,31 +75,31 @@ export class OhlcService {
         .then((res) => {
           data = res.data.data;
           length = res.data.totalRecord;
+          const formattedData = data?.map((item) => {
+            return {
+              symbol: item.Symbol,
+              time: Utils.convertToISODate(item.TradingDate),
+              market: item.Market,
+              open: item.Open,
+              high: item.High,
+              low: item.Low,
+              close: item.Close,
+              value: item.Value,
+              volume: item.Volume,
+            };
+          });
+          try {
+            this.dailyOhlcModel.bulkCreate(formattedData, {
+              ignoreDuplicates: true,
+            });
+          } catch (error) {
+            console.log(error);
+          }
         })
         .catch((e) => {
           console.log(e);
         });
 
-      const formattedData = data.map((item) => {
-        return {
-          symbol: item.Symbol,
-          time: Utils.convertToISODate(item.TradingDate),
-          market: item.Market,
-          open: item.Open,
-          high: item.High,
-          low: item.Low,
-          close: item.Close,
-          value: item.Value,
-          volume: item.Volume,
-        };
-      });
-      try {
-        this.dailyOhlcModel.bulkCreate(formattedData, {
-          ignoreDuplicates: true,
-        });
-      } catch (error) {
-        console.log(error);
-      }
       return { data, length };
     };
 
@@ -159,7 +160,8 @@ export class OhlcService {
     isTruncate: boolean = true,
   ): Promise<any> {
     const fetchData = async ({ symbol, pageIndex, headers }) => {
-      let data, length;
+      let data = [],
+        length;
       const lookupRequest = {
         symbol: symbol,
         pageIndex: pageIndex,
@@ -186,38 +188,36 @@ export class OhlcService {
         .then((res) => {
           data = res.data.data;
           length = res.data.totalRecord;
+          const formattedData = data?.map((item) => {
+            const dateTimeString = `${item.TradingDate} ${item.Time}`;
+            const parsedDate = parse(
+              dateTimeString,
+              'dd/MM/yyyy HH:mm:ss',
+              new Date(),
+            );
+            return {
+              symbol: item.Symbol,
+              time: parsedDate,
+              market: item.Market,
+              open: item.Open,
+              high: item.High,
+              low: item.Low,
+              close: item.Close,
+              value: item.Value,
+              volume: item.Volume,
+            };
+          });
+          try {
+            this.intradayOhlcModel.bulkCreate(formattedData, {
+              ignoreDuplicates: true,
+            });
+          } catch (error) {
+            console.log(error);
+          }
         })
         .catch((e) => {
           console.log(e);
         });
-
-      const formattedData = data.map((item) => {
-        const dateTimeString = `${item.TradingDate} ${item.Time}`;
-        const parsedDate = parse(
-          dateTimeString,
-          'dd/MM/yyyy HH:mm:ss',
-          new Date(),
-        );
-        return {
-          symbol: item.Symbol,
-          time: parsedDate,
-          market: item.Market,
-          open: item.Open,
-          high: item.High,
-          low: item.Low,
-          close: item.Close,
-          value: item.Value,
-          volume: item.Volume,
-        };
-      });
-      try {
-        this.intradayOhlcModel.bulkCreate(formattedData, {
-          ignoreDuplicates: true,
-        });
-      } catch (error) {
-        console.log(error);
-      }
-      console.log(formattedData);
 
       return { data, length };
     };

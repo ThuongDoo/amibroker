@@ -419,7 +419,7 @@ export class OhlcService {
       },
       { ignoreDuplicates: true },
     );
-    this.logger.log(`intraday import ${item.Symbol}`);
+    // this.logger.log(`intraday import ${item.Symbol}`);
   }
 
   async updateDaily(data) {

@@ -3,12 +3,13 @@ import { CreateUserDto } from './dto/createUser.dto';
 import * as bcrypt from 'bcryptjs';
 import { Request } from 'express';
 import { InjectModel } from '@nestjs/sequelize';
-import { User } from './model/user.model';
+import { User, UserRole } from './model/user.model';
 import { UserRequest } from './userRequest.model';
 import { UserRequestDto } from './dto/userRequest.dto';
 import { UpdateUserDto } from './dto/updateUser.dto';
 import { UserSecurity } from './model/userSecurity.model';
 import { Security } from 'src/ssi/model/security.model';
+import { add } from 'date-fns';
 
 @Injectable()
 export class UserService {
@@ -23,6 +24,8 @@ export class UserService {
     private securityModel: typeof Security,
   ) {}
 
+  // USER
+
   findAll(): Promise<User[]> {
     return this.userModel.findAll();
   }
@@ -33,7 +36,16 @@ export class UserService {
 
   async addOne(createUserDto: CreateUserDto): Promise<any> {
     const salt = await bcrypt.genSalt(10);
-    const password = '123456';
+    const currentDate = new Date();
+
+    // Cộng thêm 15 ngày
+    const newDate = add(currentDate, { days: 15 });
+
+    let password = '123456';
+    if (createUserDto.password) {
+      password = createUserDto.password;
+    }
+
     const hashPassword = await bcrypt.hash(password, salt);
     try {
       const user = await this.userModel.create({
@@ -41,12 +53,79 @@ export class UserService {
         name: createUserDto.name,
         password: hashPassword,
         email: createUserDto.email,
-        roles: createUserDto.roles,
+        roles: UserRole.STOCK1,
+        expirationDate: newDate,
       });
 
       return user;
     } catch (error) {
       throw error;
+    }
+  }
+
+  async updateUser(createUserDto: UpdateUserDto) {
+    const user = await this.userModel.findOne({
+      where: { phone: createUserDto.phone },
+    });
+    if (createUserDto.password) {
+      const salt = await bcrypt.genSalt(10);
+      createUserDto.password = await bcrypt.hash(createUserDto.password, salt);
+    }
+    if (!user) {
+      throw new BadRequestException('user not found');
+    }
+    try {
+      const date = createUserDto.date;
+
+      const today = new Date();
+      const userDate = user.expirationDate;
+      let futureDate;
+      // Sao chép ngày hôm nay vào một đối tượng mới để tránh thay đổi trực tiếp
+      if (userDate >= today) {
+        switch (date) {
+          case '15d':
+            futureDate = add(userDate, { days: 15 });
+            break;
+          case '3m':
+            futureDate = add(userDate, { months: 3 });
+            break;
+          case '6m':
+            futureDate = add(userDate, { months: 6 });
+            break;
+          case '1y':
+            futureDate = add(userDate, { years: 1 });
+            break;
+          default:
+            break;
+        }
+      } else {
+        switch (date) {
+          case '15d':
+            futureDate = add(today, { days: 15 });
+            break;
+          case '3m':
+            futureDate = add(today, { months: 3 });
+            break;
+          case '6m':
+            futureDate = add(today, { months: 6 });
+            break;
+          case '1y':
+            futureDate = add(today, { years: 1 });
+            break;
+          default:
+            break;
+        }
+      }
+
+      await user.update({
+        name: createUserDto.name,
+        email: createUserDto.email,
+        phone: createUserDto.phone,
+        password: createUserDto.password,
+        expirationDate: futureDate,
+      });
+    } catch (error) {
+      throw new BadRequestException('update failed');
     }
   }
 
@@ -59,10 +138,6 @@ export class UserService {
     });
     user.deviceInfo = deviceInfo;
     await user.save();
-  }
-
-  async getUserRequest() {
-    return this.userRequestModel.findAll();
   }
 
   async getAllUser() {
@@ -117,6 +192,25 @@ export class UserService {
     });
   }
 
+  async deleteUser(phones: string) {
+    const ids = phones.split(',').map(Number);
+
+    try {
+      const deleteCount = await this.userModel.destroy({
+        where: { phone: ids },
+      });
+      return deleteCount;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // USER REQUEST
+
+  async getUserRequest() {
+    return this.userRequestModel.findAll();
+  }
+
   async createUserRequest(userRequestDto: UserRequestDto) {
     try {
       const userRequest = await this.userRequestModel.create({
@@ -126,19 +220,6 @@ export class UserService {
         content: userRequestDto.content,
       });
       return userRequest;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  async deleteUser(phones: string) {
-    const ids = phones.split(',').map(Number);
-
-    try {
-      const deleteCount = await this.userModel.destroy({
-        where: { phone: ids },
-      });
-      return deleteCount;
     } catch (error) {
       throw error;
     }
@@ -157,39 +238,7 @@ export class UserService {
     }
   }
 
-  async updateUser(createUserDto: UpdateUserDto) {
-    const user = await this.userModel.findOne({
-      where: { phone: createUserDto.phone },
-    });
-    if (createUserDto.password) {
-      const salt = await bcrypt.genSalt(10);
-      createUserDto.password = await bcrypt.hash(createUserDto.password, salt);
-    }
-    if (!user) {
-      throw new BadRequestException('user not found');
-    }
-    try {
-      const today = new Date();
-      const userDate = user.expirationDate;
-      const futureDate = new Date();
-      // Sao chép ngày hôm nay vào một đối tượng mới để tránh thay đổi trực tiếp
-      if (userDate >= today) {
-        futureDate.setDate(userDate.getDate() + createUserDto.date);
-      } else {
-        futureDate.setDate(today.getDate() + createUserDto.date);
-      }
-
-      await user.update({
-        name: createUserDto.name,
-        email: createUserDto.email,
-        phone: createUserDto.phone,
-        password: createUserDto.password,
-        expirationDate: futureDate,
-      });
-    } catch (error) {
-      throw new BadRequestException('update failed');
-    }
-  }
+  // SECURITY
 
   async addFavoriteSecurity(phone: string, securitySymbol: string) {
     const user = await this.userModel.findOne({ where: { phone: phone } });

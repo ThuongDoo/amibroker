@@ -265,6 +265,7 @@ export class OhlcService {
         headers,
         length: dataLengths[symbol],
       });
+      console.log('intraday', symbol);
     }
   }
 

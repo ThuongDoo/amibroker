@@ -1,4 +1,4 @@
-import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import { Inject, Injectable, Logger, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Buysell } from './buysell.model';
 import { EventsGateway } from 'src/events/events.gateway';
@@ -16,6 +16,7 @@ export class BuysellService {
     @Inject(forwardRef(() => EventsGateway))
     private readonly eventsGateway: EventsGateway,
   ) {}
+  private logger: Logger = new Logger('BuysellService');
 
   buysellData = [];
   buysellImported = [];
@@ -94,7 +95,6 @@ export class BuysellService {
       return updatedData;
     };
     const updateNull = async (stocks) => {
-      // console.log(stocks);
       const nonZeroStatusArray = await stocks.filter(
         (item) => item.buysell.status !== 0,
       );
@@ -258,8 +258,6 @@ export class BuysellService {
       ticker === undefined &&
       limit === undefined
     ) {
-      console.log('hihi');
-
       return this.getBuysell();
     } else {
       let whereCondition = {}; // Điều kiện tìm kiếm mặc định là trống
@@ -286,7 +284,6 @@ export class BuysellService {
       };
 
       const buysell = await this.buysellModel.findAll(options);
-      // console.log(buysell);
 
       return { data: buysell };
     }
@@ -320,7 +317,6 @@ export class BuysellService {
           startIndex += chunkSize;
         }
 
-        console.log('imported file length: ', results.length);
         return results;
       } catch (error) {
         throw error;

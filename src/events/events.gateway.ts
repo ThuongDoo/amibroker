@@ -113,7 +113,7 @@ export class EventsGateway
   }
 
   afterInit(server: Server) {
-    // console.log(server);
+    this.logger.log('server init');
   }
   handleDisconnect(client: Socket) {
     this.logger.log(`Disconnect: ${client.id}`);

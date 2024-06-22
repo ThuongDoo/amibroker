@@ -105,7 +105,7 @@ export class OhlcService {
         .catch((e) => {
           console.log(e);
         });
-      this.logger.log(`daily ${symbol}`);
+      this.logger.log(`daily import ${symbol}`);
 
       return { data, length };
     };
@@ -149,7 +149,8 @@ export class OhlcService {
     }
 
     for (const symbol of symbols) {
-      await fetchDataLength({ symbol, headers, dataLengths });
+      fetchDataLength({ symbol, headers, dataLengths });
+      await Utils.sleep(1000);
     }
 
     for (const symbol of symbols) {
@@ -229,7 +230,7 @@ export class OhlcService {
         .catch((e) => {
           console.log(e);
         });
-      this.logger.log(`intraday ${symbol}`);
+      this.logger.log(`intraday import ${symbol}`);
 
       return { data, length };
     };
@@ -250,6 +251,7 @@ export class OhlcService {
       dataLengths,
     }): Promise<void> => {
       const data = await fetchData({ symbol, pageIndex: 1, headers });
+
       dataLengths[symbol] = data.length;
     };
 
@@ -268,7 +270,8 @@ export class OhlcService {
     if (isTruncate) await this.intradayOhlcModel.truncate();
 
     for (const symbol of symbols) {
-      await fetchDataLength({ symbol, headers, dataLengths });
+      fetchDataLength({ symbol, headers, dataLengths });
+      await Utils.sleep(1000);
     }
 
     for (const symbol of symbols) {
@@ -393,6 +396,7 @@ export class OhlcService {
         results = results.concat(chunkResults);
         startIndex += chunkSize;
       }
+      this.logger.log('ROC import');
       return { length: results.length, data: results };
     } catch (error) {
       throw error;
@@ -415,6 +419,7 @@ export class OhlcService {
       },
       { ignoreDuplicates: true },
     );
+    this.logger.log(`intraday import ${item.Symbol}`);
   }
 
   async updateDaily(data) {
@@ -434,6 +439,7 @@ export class OhlcService {
     await this.dailyOhlcModel.bulkCreate(formattedData, {
       ignoreDuplicates: true,
     });
+    this.logger.log(`daily import`);
   }
 
   groupAndAverageStocksByTime(item) {
@@ -470,6 +476,7 @@ export class OhlcService {
   @Cron('0 10 * * *')
   async handleCron() {
     await this.updateRoc(false, true);
+    this.logger.log(`update roc`);
 
     // Thực hiện các hành động bạn muốn ở đây
   }

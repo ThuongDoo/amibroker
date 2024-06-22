@@ -7,7 +7,6 @@ export class Utils {
       try {
         // const parsedDate = parse(dateString, 'M/d/yyyy HH:mm:ss', new Date());
         // const isoString = formatISO(parsedDate);
-        // console.log(isoString);
         const inputFormat = 'M/d/yyyy HH:mm:ss';
         const outputFormat = 'yyyy-MM-dd';
         const parsedDate = parse(dateString, inputFormat, new Date());

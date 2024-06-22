@@ -468,10 +468,12 @@ export class SsiService {
   @Cron('0 9 * * *')
   updateDailyOhlc() {
     this.ohlcService.updateDaily(Object.values(this.bData));
+    this.logger.log(`update daily ohlc`);
   }
 
   @Cron('0 1 * * *')
   deleteDailyOrderBook() {
     this.orderBookModel.truncate();
+    this.logger.log(`truncate orderbook`);
   }
 }

@@ -462,7 +462,6 @@ export class StockService {
 
   async getStocks() {
     const data = this.stocksData.map((item) => item.Ticker);
-    console.log('data', data);
 
     return data;
   }
@@ -562,7 +561,6 @@ export class StockService {
       return true;
     };
 
-    console.log(filterData);
     const result = this.stocksData;
 
     const a = result.filter((item) => checkCondition(item, filterData));

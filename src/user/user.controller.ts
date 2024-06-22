@@ -51,17 +51,12 @@ export class UserController {
   @Roles(UserRole.ADMIN)
   @Patch('/resetPassword/:phone')
   resetPassword(@Param('phone') phone: string) {
-    console.log(phone);
-
     return this.userService.resetPassword(phone);
   }
 
   @Patch('/changePassword')
   changePassword(@Body() data) {
     const { newPassword, confirmPassword, phone } = data;
-    console.log(data);
-
-    console.log(newPassword, confirmPassword, phone);
 
     return this.userService.changePassword(phone, newPassword, confirmPassword);
   }

@@ -36,8 +36,6 @@ export class UserService {
     const password = '123456';
     const hashPassword = await bcrypt.hash(password, salt);
     try {
-      console.log('haha', createUserDto);
-
       const user = await this.userModel.create({
         phone: createUserDto.phone,
         name: createUserDto.name,
@@ -45,7 +43,6 @@ export class UserService {
         email: createUserDto.email,
         roles: createUserDto.roles,
       });
-      console.log(user);
 
       return user;
     } catch (error) {
@@ -88,7 +85,6 @@ export class UserService {
       confirmPassword,
       user.password,
     );
-    console.log(isPasswordCorrect);
 
     if (isPasswordCorrect) {
       const salt = await bcrypt.genSalt(10);
@@ -150,7 +146,6 @@ export class UserService {
 
   async deleteUserRequest(userRequestIds: string) {
     const ids = userRequestIds.split(',').map(Number);
-    console.log(ids);
 
     try {
       const deleteCount = await this.userRequestModel.destroy({
@@ -184,8 +179,6 @@ export class UserService {
         futureDate.setDate(today.getDate() + createUserDto.date);
       }
 
-      console.log(futureDate);
-
       await user.update({
         name: createUserDto.name,
         email: createUserDto.email,
@@ -211,7 +204,6 @@ export class UserService {
     if (!security) {
       throw new BadRequestException('security is not exist');
     }
-    console.log(security);
 
     const userSecurity = await this.userSecurityModel.create(
       {

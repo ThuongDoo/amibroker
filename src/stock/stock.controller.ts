@@ -9,8 +9,6 @@ export class StockController {
   @Public()
   @Post()
   updateStock(@Body() data) {
-    console.log('update');
-
     return this.stockService.updateStock(data);
   }
 

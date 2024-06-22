@@ -1,4 +1,4 @@
-import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import { Inject, Injectable, Logger, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { DailyOhlc } from './model/dailyOhlc.model';
 import { IntradayOhlc } from './model/intradayOhlc.model';
@@ -32,6 +32,8 @@ export class OhlcService {
     @Inject(forwardRef(() => SsiService))
     private readonly ssiService: SsiService,
   ) {}
+
+  private logger: Logger = new Logger('OhlcService');
 
   dailyOhlcImported = [];
   intradayOhlcImported = [];
@@ -74,31 +76,36 @@ export class OhlcService {
         )
         .then((res) => {
           data = res.data.data;
-          length = res.data.totalRecord;
-          const formattedData = data?.map((item) => {
-            return {
-              symbol: item.Symbol,
-              time: Utils.convertToISODate(item.TradingDate),
-              market: item.Market,
-              open: item.Open,
-              high: item.High,
-              low: item.Low,
-              close: item.Close,
-              value: item.Value,
-              volume: item.Volume,
-            };
-          });
-          try {
-            this.dailyOhlcModel.bulkCreate(formattedData, {
-              ignoreDuplicates: true,
+          if (data === null) {
+            length = 0;
+          } else {
+            length = res.data.totalRecord;
+            const formattedData = data?.map((item) => {
+              return {
+                symbol: item.Symbol,
+                time: Utils.convertToISODate(item.TradingDate),
+                market: item.Market,
+                open: item.Open,
+                high: item.High,
+                low: item.Low,
+                close: item.Close,
+                value: item.Value,
+                volume: item.Volume,
+              };
             });
-          } catch (error) {
-            console.log(error);
+            try {
+              this.dailyOhlcModel.bulkCreate(formattedData, {
+                ignoreDuplicates: true,
+              });
+            } catch (error) {
+              console.log(error);
+            }
           }
         })
         .catch((e) => {
           console.log(e);
         });
+      this.logger.log(`daily ${symbol}`);
 
       return { data, length };
     };
@@ -187,37 +194,42 @@ export class OhlcService {
         )
         .then((res) => {
           data = res.data.data;
-          length = res.data.totalRecord;
-          const formattedData = data?.map((item) => {
-            const dateTimeString = `${item.TradingDate} ${item.Time}`;
-            const parsedDate = parse(
-              dateTimeString,
-              'dd/MM/yyyy HH:mm:ss',
-              new Date(),
-            );
-            return {
-              symbol: item.Symbol,
-              time: parsedDate,
-              market: item.Market,
-              open: item.Open,
-              high: item.High,
-              low: item.Low,
-              close: item.Close,
-              value: item.Value,
-              volume: item.Volume,
-            };
-          });
-          try {
-            this.intradayOhlcModel.bulkCreate(formattedData, {
-              ignoreDuplicates: true,
+          if (data === null) {
+            length = 0;
+          } else {
+            length = res.data.totalRecord;
+            const formattedData = data?.map((item) => {
+              const dateTimeString = `${item.TradingDate} ${item.Time}`;
+              const parsedDate = parse(
+                dateTimeString,
+                'dd/MM/yyyy HH:mm:ss',
+                new Date(),
+              );
+              return {
+                symbol: item.Symbol,
+                time: parsedDate,
+                market: item.Market,
+                open: item.Open,
+                high: item.High,
+                low: item.Low,
+                close: item.Close,
+                value: item.Value,
+                volume: item.Volume,
+              };
             });
-          } catch (error) {
-            console.log(error);
+            try {
+              this.intradayOhlcModel.bulkCreate(formattedData, {
+                ignoreDuplicates: true,
+              });
+            } catch (error) {
+              console.log(error);
+            }
           }
         })
         .catch((e) => {
           console.log(e);
         });
+      this.logger.log(`intraday ${symbol}`);
 
       return { data, length };
     };
@@ -265,7 +277,6 @@ export class OhlcService {
         headers,
         length: dataLengths[symbol],
       });
-      console.log('intraday', symbol);
     }
   }
 
@@ -287,8 +298,6 @@ export class OhlcService {
   }
 
   async getRoc(startDate: Date, endDate: Date) {
-    console.log(startDate, endDate);
-
     const rocs = await this.rocModel.findAll({
       order: [['time', 'ASC']],
       where: {
@@ -384,7 +393,6 @@ export class OhlcService {
         results = results.concat(chunkResults);
         startIndex += chunkSize;
       }
-      console.log('imported file length: ', results.length);
       return { length: results.length, data: results };
     } catch (error) {
       throw error;

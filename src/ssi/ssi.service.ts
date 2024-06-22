@@ -1,4 +1,4 @@
-import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import { Inject, Injectable, Logger, forwardRef } from '@nestjs/common';
 import { endpoints } from 'src/shared/utils/api';
 import * as client from './ssi-fcdata';
 import api from '../shared/utils/api';
@@ -23,6 +23,7 @@ export class SsiService {
   private bData: any = {};
   private rData: any = {};
   private miData: any = {};
+  private logger: Logger = new Logger('SsiService');
 
   constructor(
     @Inject(forwardRef(() => OhlcService))
@@ -135,7 +136,6 @@ export class SsiService {
   async getOrderBook(symbol) {
     const orderBook = await this.orderBookModel.findAll({ where: { symbol } });
     return JSON.stringify(orderBook);
-    // console.log('hi');
   }
 
   getFData() {
@@ -298,8 +298,6 @@ export class SsiService {
     const pageIndex = 1;
 
     const response = await fetchData(pageIndex, pageSize, token);
-
-    console.log(response);
 
     try {
       await this.indexModel.create({

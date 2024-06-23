@@ -33,6 +33,7 @@ export class AuthController {
     return { msg: 'Phiên đăng nhập đã kết thúc' };
   }
 
+  @Public()
   @Post('/signup')
   createUser(@Body() createUserDto: CreateUserDto) {
     return this.userService.addOne(createUserDto);

@@ -1,5 +1,6 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { SsiService } from './ssi.service';
+import { Public } from 'src/shared/decorator/public.decorator';
 
 @Controller('ssi')
 export class SsiController {
@@ -19,6 +20,7 @@ export class SsiController {
     return await this.ssiService.importVnindex();
   }
 
+  @Public()
   @Get('security')
   async getSecurity(@Query('indexes') indexes: string) {
     return await this.ssiService.getSecurity(indexes);

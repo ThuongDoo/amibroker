@@ -14,6 +14,7 @@ import { UserRequestDto } from './dto/userRequest.dto';
 import { UpdateUserDto } from './dto/updateUser.dto';
 import { Roles } from 'src/shared/decorator/roles.decorator';
 import { UserRole } from './model/user.model';
+import { Public } from 'src/shared/decorator/public.decorator';
 
 @Controller('user')
 export class UserController {
@@ -25,7 +26,8 @@ export class UserController {
     return this.userService.getAllUser();
   }
 
-  @Roles(UserRole.ADMIN)
+  // @Roles(UserRole.ADMIN)
+  @Public()
   @Post('/userRequest')
   createUserRequest(@Body() userRequestDto: UserRequestDto) {
     return this.userService.createUserRequest(userRequestDto);

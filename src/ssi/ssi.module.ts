@@ -6,7 +6,7 @@ import { Security } from './model/security.model';
 import { IndexSecurity } from './model/indexSecurity.model';
 import { Index } from './model/index.model';
 import { OhlcModule } from 'src/ohlc/ohlc.module';
-import { OrderBook } from './model/orderBook';
+import { OrderBook } from './model/orderBook.model';
 
 @Module({
   imports: [

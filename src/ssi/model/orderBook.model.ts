@@ -1,18 +1,10 @@
-import {
-  Column,
-  DataType,
-  Model,
-  PrimaryKey,
-  Table,
-} from 'sequelize-typescript';
+import { Column, DataType, Model, Table } from 'sequelize-typescript';
 
 @Table
 export class OrderBook extends Model {
-  @PrimaryKey
   @Column
   symbol: string;
 
-  @PrimaryKey
   @Column(DataType.TIME)
   time: string;
 

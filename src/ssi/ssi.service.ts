@@ -9,7 +9,7 @@ import { Index } from './model/index.model';
 import { Op } from 'sequelize';
 import { Utils } from 'src/shared/utils/utils';
 import { OhlcService } from 'src/ohlc/ohlc.service';
-import { OrderBook } from './model/orderBook';
+import { OrderBook } from './model/orderBook.model';
 import { Cron } from '@nestjs/schedule';
 import { format, subDays } from 'date-fns';
 

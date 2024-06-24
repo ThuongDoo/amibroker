@@ -68,7 +68,7 @@ import { ArticleModule } from './article/article.module';
     AuthModule,
     SsiModule,
     StockModule,
-    ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }]),
     BuysellModule,
     EventsModule,
     OhlcModule,

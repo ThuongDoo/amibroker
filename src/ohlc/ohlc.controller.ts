@@ -2,11 +2,13 @@ import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { OhlcService } from './ohlc.service';
 import { SkipThrottle } from '@nestjs/throttler';
 import { format, subDays } from 'date-fns';
+import { Public } from 'src/shared/decorator/public.decorator';
 
 @Controller('ohlc')
 export class OhlcController {
   constructor(private readonly ohlcService: OhlcService) {}
 
+  @Public()
   @Get('/daily')
   async getDailyOhlc(@Query('ticker') ticker: string) {
     return await this.ohlcService.getDaily(ticker);
@@ -18,6 +20,7 @@ export class OhlcController {
     return 'hah';
   }
 
+  @Public()
   @Get('/intraday')
   async getIntradayOhlc(@Query('ticker') ticker: string) {
     return await this.ohlcService.getIntraday(ticker);

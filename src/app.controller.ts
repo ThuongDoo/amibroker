@@ -10,6 +10,8 @@ export class AppController {
   @Get('cpu-usage')
   getCpuUsage(): any {
     const usage = process.cpuUsage();
+    console.log();
+
     return { usage };
   }
 

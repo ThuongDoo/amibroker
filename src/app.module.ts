@@ -29,6 +29,7 @@ import { Category } from './category/model/category.model';
 import { CategorySecurity } from './category/model/categorySecurity.model';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ArticleModule } from './article/article.module';
+import { TradingViewModule } from './trading-view/trading-view.module';
 
 @Module({
   imports: [
@@ -74,6 +75,7 @@ import { ArticleModule } from './article/article.module';
     OhlcModule,
     CategoryModule,
     ArticleModule,
+    TradingViewModule,
   ],
   controllers: [AppController],
   providers: [

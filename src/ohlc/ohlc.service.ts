@@ -3,7 +3,13 @@ import { InjectModel } from '@nestjs/sequelize';
 import { DailyOhlc } from './model/dailyOhlc.model';
 import { IntradayOhlc } from './model/intradayOhlc.model';
 import { Roc } from './model/roc.model';
-import { formatISO, parse } from 'date-fns';
+import {
+  format,
+  formatISO,
+  parse,
+  setMilliseconds,
+  setSeconds,
+} from 'date-fns';
 import { Op } from 'sequelize';
 import { SsiService } from 'src/ssi/ssi.service';
 import { Security } from 'src/ssi/model/security.model';
@@ -11,8 +17,9 @@ import { endpoints } from 'src/shared/utils/api';
 import api from '../shared/utils/api';
 import { Utils } from 'src/shared/utils/utils';
 import { Category } from 'src/category/model/category.model';
-import { Cron } from '@nestjs/schedule';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { Index } from 'src/ssi/model/index.model';
+import { EventsGateway } from 'src/events/events.gateway';
 
 @Injectable()
 export class OhlcService {
@@ -31,13 +38,14 @@ export class OhlcService {
     private indexModel: typeof Index,
     @Inject(forwardRef(() => SsiService))
     private readonly ssiService: SsiService,
+    @Inject(forwardRef(() => EventsGateway))
+    private readonly eventsGateway: EventsGateway,
   ) {}
 
   private logger: Logger = new Logger('OhlcService');
 
-  dailyOhlcImported = [];
-  intradayOhlcImported = [];
-  roc = [];
+  intradayData = {};
+  dailyData = {};
 
   async importDaily(
     fromDate = '01/01/2000',
@@ -283,21 +291,37 @@ export class OhlcService {
     }
   }
 
-  async getDaily(symbol: string) {
-    const ohlcs = await this.dailyOhlcModel.findAll({
-      where: { symbol: symbol },
-      order: [['time', 'ASC']],
-    });
+  async getDaily(symbol: string, newest: boolean = false) {
+    if (newest) {
+      const ohlcs = await this.dailyOhlcModel.findOne({
+        where: { symbol: symbol },
+        order: [['time', 'DESC']],
+      });
+      return { data: ohlcs };
+    } else {
+      const ohlcs = await this.dailyOhlcModel.findAll({
+        where: { symbol: symbol },
+        order: [['time', 'ASC']],
+      });
 
-    return { length: ohlcs.length, data: ohlcs };
+      return { length: ohlcs.length, data: ohlcs };
+    }
   }
 
-  async getIntraday(symbol: string) {
-    const ohlcs = await this.intradayOhlcModel.findAll({
-      where: { symbol: symbol },
-      order: [['time', 'ASC']],
-    });
-    return { length: ohlcs.length, data: ohlcs };
+  async getIntraday(symbol: string, newest: boolean = false) {
+    if (newest) {
+      const ohlcs = await this.intradayOhlcModel.findOne({
+        where: { symbol: symbol },
+        order: [['time', 'DESC']],
+      });
+      return { data: ohlcs };
+    } else {
+      const ohlcs = await this.intradayOhlcModel.findAll({
+        where: { symbol: symbol },
+        order: [['time', 'ASC']],
+      });
+      return { length: ohlcs.length, data: ohlcs };
+    }
   }
 
   async getRoc(startDate: Date, endDate: Date) {
@@ -406,19 +430,33 @@ export class OhlcService {
   updateOneIntraday(item) {
     const dateTimeString = `${item.TradingDate} ${item.Time}`;
     const parsedDate = parse(dateTimeString, 'dd/MM/yyyy HH:mm:ss', new Date());
-    this.intradayOhlcModel.create(
-      {
+    const dateWithZeroSeconds = setMilliseconds(setSeconds(parsedDate, 0), 0);
+
+    let oldData = this.intradayData[item.Symbol];
+    if (oldData) {
+      if (oldData.high < item.High) {
+        oldData.high = item.High;
+      }
+      if (oldData.low > item.Low) {
+        oldData.low = item.Low;
+      }
+      oldData.close = item.Close;
+      oldData.volume = item.Volume;
+      oldData.value = item.Value;
+    } else {
+      oldData = {
         symbol: item.Symbol,
-        time: parsedDate,
+        time: dateWithZeroSeconds,
         open: item.Open,
         high: item.High,
         low: item.Low,
         close: item.Close,
         volume: item.Volume,
         value: item.Value,
-      },
-      { ignoreDuplicates: true },
-    );
+      };
+    }
+    this.intradayData[item.Symbol] = oldData;
+
     // this.logger.log(`intraday import ${item.Symbol}`);
   }
 
@@ -477,6 +515,53 @@ export class OhlcService {
   async handleCron() {
     await this.updateRoc(false, true);
     this.logger.log(`update roc`);
+
+    // Thực hiện các hành động bạn muốn ở đây
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async updateIntraday() {
+    const data = this.intradayData;
+    this.intradayData = {};
+    this.eventsGateway.sendOhlc();
+
+    await this.intradayOhlcModel.bulkCreate(Object.values(data), {
+      ignoreDuplicates: true,
+    });
+
+    const daily = this.dailyData;
+    Object.values(data).forEach((newData: any) => {
+      let oldData = daily[newData.symbol];
+      if (oldData) {
+        if (oldData.high < newData.high) {
+          oldData.high = newData.high;
+        }
+        if (oldData.low > newData.low) {
+          oldData.low = newData.low;
+        }
+        oldData.close = newData.close;
+        oldData.volume = newData.volume;
+        oldData.value = newData.value;
+      } else {
+        const formattedDate = format(newData.time, 'yyyy-MM-dd');
+        oldData = {
+          symbol: newData.symbol,
+          time: formattedDate,
+          open: newData.open,
+          high: newData.high,
+          low: newData.low,
+          close: newData.close,
+          volume: newData.volume,
+          value: newData.value,
+        };
+      }
+      this.dailyData[newData.symbol] = oldData;
+    });
+
+    this.dailyData = daily;
+    await this.dailyOhlcModel.bulkCreate(Object.values(this.dailyData), {
+      updateOnDuplicate: ['open', 'high', 'low', 'close', 'volume', 'value'],
+    });
 
     // Thực hiện các hành động bạn muốn ở đây
   }

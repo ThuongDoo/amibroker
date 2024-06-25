@@ -56,6 +56,7 @@ export class UserController {
     return this.userService.resetPassword(phone);
   }
 
+  @Public()
   @Patch('/changePassword')
   changePassword(@Body() data) {
     const { newPassword, confirmPassword, phone } = data;

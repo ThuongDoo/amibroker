@@ -183,10 +183,6 @@ export class SsiService {
     return JSON.stringify(this.rData[security]);
   }
 
-  async getBData(security: string) {
-    return JSON.stringify(this.bData[security]);
-  }
-
   async importSecurity() {
     const fetchData = async (pageIndex, pageSize, token) => {
       let data;

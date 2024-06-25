@@ -9,6 +9,7 @@ import { SsiModule } from 'src/ssi/ssi.module';
 import { Security } from 'src/ssi/model/security.model';
 import { Category } from 'src/category/model/category.model';
 import { Index } from 'src/ssi/model/index.model';
+import { EventsModule } from 'src/events/events.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { Index } from 'src/ssi/model/index.model';
       Index,
     ]),
     forwardRef(() => SsiModule),
+    forwardRef(() => EventsModule),
   ],
   controllers: [OhlcController],
   providers: [OhlcService],

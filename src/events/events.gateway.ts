@@ -12,6 +12,7 @@ import { StockService } from 'src/stock/stock.service';
 import { Inject, Logger, forwardRef } from '@nestjs/common';
 import { BuysellService } from 'src/buysell/buysell.service';
 import { SsiService } from 'src/ssi/ssi.service';
+import { OhlcService } from 'src/ohlc/ohlc.service';
 
 @WebSocketGateway({
   cors: {
@@ -31,6 +32,9 @@ export class EventsGateway
 
     @Inject(forwardRef(() => BuysellService))
     private readonly buysellService: BuysellService,
+
+    @Inject(forwardRef(() => OhlcService))
+    private readonly ohlcService: OhlcService,
     private readonly ssiService: SsiService,
   ) {}
 
@@ -107,9 +111,14 @@ export class EventsGateway
   async handleUpdateB(client: Socket, payload: any) {
     this.logger.log(`ssi_b_request ${client.id}`);
 
-    const data = await this.ssiService.getBData(payload);
+    const intradayData = await this.ohlcService.getIntraday(payload, true);
+    const dailyData = await this.ohlcService.getDaily(payload, true);
+    const data = JSON.stringify({
+      intradayData: intradayData.data,
+      dailyData: dailyData.data,
+    });
 
-    client.emit('ssi_b_update', { data: data });
+    client.emit('ssi_b_update', { data });
   }
 
   afterInit(server: Server) {
@@ -133,5 +142,12 @@ export class EventsGateway
     this.logger.log(`Emit buy sell to client`);
 
     this.server.emit('update_buysell_data', { data: data });
+  }
+
+  async sendOhlc() {
+    // const realtimeData = await this.stockService.getBuysellProfitRealtime();
+    this.logger.log(`Emit OHLC to client`);
+
+    this.server.emit('update_ohlc_data', true);
   }
 }

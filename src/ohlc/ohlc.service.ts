@@ -521,6 +521,8 @@ export class OhlcService {
 
   @Cron(CronExpression.EVERY_MINUTE)
   async updateIntraday() {
+    console.log('hih');
+
     const data = this.intradayData;
     this.intradayData = {};
     this.eventsGateway.sendOhlc();

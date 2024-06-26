@@ -69,7 +69,7 @@ import { TradingViewModule } from './trading-view/trading-view.module';
     AuthModule,
     SsiModule,
     StockModule,
-    ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }]),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 300 }]),
     BuysellModule,
     EventsModule,
     OhlcModule,

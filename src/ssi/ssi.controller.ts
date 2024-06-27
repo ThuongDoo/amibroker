@@ -36,6 +36,7 @@ export class SsiController {
     return this.ssiService.getMiData(indexes);
   }
 
+  @Public()
   @Get('changeAll')
   changeAll() {
     return this.ssiService.changeAll();

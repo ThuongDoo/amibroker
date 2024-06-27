@@ -11,7 +11,8 @@ import { Utils } from 'src/shared/utils/utils';
 import { OhlcService } from 'src/ohlc/ohlc.service';
 import { OrderBook } from './model/orderBook.model';
 import { Cron } from '@nestjs/schedule';
-import { format, subDays } from 'date-fns';
+import { format, parse, subDays } from 'date-fns';
+import { NuocNgoai } from './model/nuocNgoai.model';
 
 @Injectable()
 export class SsiService {
@@ -36,6 +37,8 @@ export class SsiService {
     private indexModel: typeof Index,
     @InjectModel(OrderBook)
     private orderBookModel: typeof OrderBook,
+    @InjectModel(NuocNgoai)
+    private nuocNgoaiModel: typeof NuocNgoai,
   ) {}
 
   async onModuleInit() {
@@ -58,8 +61,8 @@ export class SsiService {
     });
     client.bind(client.events.onConnected, function () {
       client.switchChannel(
-        'MI:ALL,F:ALL,X:ALL,X-QUOTE:ALL,X-TRADE:ALL,B:ALL,R:ALL',
-        // 'X-TRADE:ALL,B:ALL',
+        // 'MI:ALL,F:ALL,X:ALL,X-QUOTE:ALL,X-TRADE:ALL,B:ALL,R:ALL',
+        'R:ALL',
       );
     });
     client.start();
@@ -464,6 +467,15 @@ export class SsiService {
   @Cron('0 9 * * *')
   updateDailyOhlc() {
     this.ohlcService.updateDaily(Object.values(this.bData));
+    const newNuocNgoai = Object.values(this.rData).map((item: any) => {
+      return {
+        symbol: item.Symbol,
+        time: parse(item.TradingDate, 'dd/MM/yyyy', new Date()),
+      };
+    });
+
+    this.nuocNgoaiModel.bulkCreate(newNuocNgoai, { ignoreDuplicates: true });
+
     this.logger.log(`update daily ohlc`);
   }
 

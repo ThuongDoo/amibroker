@@ -14,6 +14,7 @@ export class OhlcController {
     return await this.ohlcService.getDaily(ticker);
   }
 
+  @Public()
   @Get('/daily/update')
   updateDailyOhlc() {
     this.ohlcService.importDaily();
@@ -26,6 +27,7 @@ export class OhlcController {
     return await this.ohlcService.getIntraday(ticker);
   }
 
+  @Public()
   @Get('/intraday/update')
   updateIntradayOhlc() {
     const currentDate = new Date();

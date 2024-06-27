@@ -521,15 +521,14 @@ export class OhlcService {
 
   @Cron(CronExpression.EVERY_MINUTE)
   async updateIntraday() {
-    console.log('hih');
-
     const data = this.intradayData;
     this.intradayData = {};
-    this.eventsGateway.sendOhlc();
 
     await this.intradayOhlcModel.bulkCreate(Object.values(data), {
       ignoreDuplicates: true,
     });
+
+    this.eventsGateway.sendOhlc();
 
     const daily = this.dailyData;
     Object.values(data).forEach((newData: any) => {
@@ -561,7 +560,7 @@ export class OhlcService {
     });
 
     this.dailyData = daily;
-    await this.dailyOhlcModel.bulkCreate(Object.values(this.dailyData), {
+    this.dailyOhlcModel.bulkCreate(Object.values(this.dailyData), {
       updateOnDuplicate: ['open', 'high', 'low', 'close', 'volume', 'value'],
     });
 

@@ -36,7 +36,7 @@ export class AuthService {
 
   async checkDeviceInfo(req: Request) {
     const userData: any = req.user;
-    const deviceInfo = req.headers['user-agent'];
+    const deviceInfo = req.sessionID;
 
     const user = await this.userService.findOne(userData.phone);
     if (deviceInfo === user.deviceInfo) {

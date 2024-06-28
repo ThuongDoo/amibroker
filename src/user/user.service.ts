@@ -131,7 +131,7 @@ export class UserService {
 
   async saveDeviceInfo(req: Request) {
     const userData: any = req.user;
-    const deviceInfo = req.headers['user-agent'];
+    const deviceInfo = req.sessionID;
 
     const user = await this.userModel.findOne({
       where: { phone: userData.phone },

@@ -44,14 +44,14 @@ export class EventsGateway
   @SubscribeMessage('filterd_stock_request')
   async handleUpdateFilter(client: Socket, payload: any) {
     const data = await this.stockService.getFilter(payload);
-    this.logger.log(`filter_stock_request ${client.id}`);
+    // this.logger.log(`filter_stock_request ${client.id}`);
 
     client.emit('update_filtered_stock_data', { data });
   }
 
   @SubscribeMessage('stock_request')
   async handleUpdateStock(client: Socket, payload: any) {
-    this.logger.log(`stock_request ${client.id}`);
+    // this.logger.log(`stock_request ${client.id}`);
 
     const data = await this.stockService.getStockByName(payload);
 
@@ -60,7 +60,7 @@ export class EventsGateway
 
   @SubscribeMessage('ssi_mi_request')
   async handleUpdateMi(client: Socket, payload: any) {
-    this.logger.log(`ssi_mi_request ${client.id}`);
+    // this.logger.log(`ssi_mi_request ${client.id}`);
 
     const data = this.ssiService.getMiData(payload);
     client.emit('ssi_mi_update', { data: data });
@@ -68,7 +68,7 @@ export class EventsGateway
 
   @SubscribeMessage('ssi_trade_request')
   async handleUpdateTrade(client: Socket, payload: any) {
-    this.logger.log(`ssi_trade_request ${client.id}`);
+    // this.logger.log(`ssi_trade_request ${client.id}`);
 
     const data = await this.ssiService.getTradeData(payload);
     client.emit('ssi_trade_update', { data: data });
@@ -76,7 +76,7 @@ export class EventsGateway
 
   @SubscribeMessage('ssi_favorite_request')
   async handleUpdateFavorite(client: Socket, payload: any) {
-    this.logger.log(`ssi_favorite_request ${client.id}`);
+    // this.logger.log(`ssi_favorite_request ${client.id}`);
 
     const data = await this.ssiService.getTradeData(payload);
     client.emit('ssi_favorite_update', { data: data });
@@ -84,7 +84,7 @@ export class EventsGateway
 
   @SubscribeMessage('ssi_x_request')
   async handleUpdateX(client: Socket, payload: any) {
-    this.logger.log(`ssi_x_request ${client.id}`);
+    // this.logger.log(`ssi_x_request ${client.id}`);
 
     const data = await this.ssiService.getXData(payload);
     client.emit('ssi_x_update', { data: data });
@@ -92,7 +92,7 @@ export class EventsGateway
 
   @SubscribeMessage('ssi_r_request')
   async handleUpdateR(client: Socket, payload: any) {
-    this.logger.log(`ssi_r_request ${client.id}`);
+    // this.logger.log(`ssi_r_request ${client.id}`);
 
     const data = await this.ssiService.getRData(payload);
     client.emit('ssi_r_update', { data: data });
@@ -100,7 +100,7 @@ export class EventsGateway
 
   @SubscribeMessage('ssi_order_book_request')
   async handleUpdateOrderBook(client: Socket, payload: any) {
-    this.logger.log(`ssi_order_book_request ${client.id}`);
+    // this.logger.log(`ssi_order_book_request ${client.id}`);
 
     const data = await this.ssiService.getOrderBook(payload);
 
@@ -109,7 +109,7 @@ export class EventsGateway
 
   @SubscribeMessage('ssi_b_request')
   async handleUpdateB(client: Socket, payload: any) {
-    this.logger.log(`ssi_b_request ${client.id}`);
+    // this.logger.log(`ssi_b_request ${client.id}`);
 
     const intradayData = await this.ohlcService.getIntraday(payload, true);
     const dailyData = await this.ohlcService.getDaily(payload, true);
@@ -133,20 +133,20 @@ export class EventsGateway
   }
 
   async sendStockUpdateSignal() {
-    this.logger.log(`Emit stock update signal`);
+    // this.logger.log(`Emit stock update signal`);
     this.server.emit('new_stock_data_available', true);
   }
 
   async sendBuysellToClient(data: any) {
     // const realtimeData = await this.stockService.getBuysellProfitRealtime();
-    this.logger.log(`Emit buy sell to client`);
+    // this.logger.log(`Emit buy sell to client`);
 
     this.server.emit('update_buysell_data', { data: data });
   }
 
   async sendOhlc() {
     // const realtimeData = await this.stockService.getBuysellProfitRealtime();
-    this.logger.log(`Emit OHLC to client`);
+    // this.logger.log(`Emit OHLC to client`);
 
     this.server.emit('update_ohlc_data', true);
   }

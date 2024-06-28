@@ -154,6 +154,7 @@ export class OhlcService {
     });
     if (isTruncate) {
       await this.dailyOhlcModel.truncate();
+      this.logger.log('daily ohlc truncate');
     }
 
     for (const symbol of symbols) {
@@ -275,7 +276,10 @@ export class OhlcService {
     const symbols = await securities.map((item) => {
       return item.Symbol;
     });
-    if (isTruncate) await this.intradayOhlcModel.truncate();
+    if (isTruncate) {
+      await this.intradayOhlcModel.truncate();
+      this.logger.log('intraday ohlc truncate');
+    }
 
     for (const symbol of symbols) {
       fetchDataLength({ symbol, headers, dataLengths });
@@ -404,7 +408,10 @@ export class OhlcService {
       })
       .flat();
     try {
-      if (isTruncate) await this.rocModel.truncate();
+      if (isTruncate) {
+        await this.rocModel.truncate();
+        this.logger.log('roc truncate');
+      }
       const chunkSize = 2000; // Số lượng mục mỗi chunk
       const totalData = averageStocksByTime.length;
       let startIndex = 0;

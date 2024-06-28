@@ -403,6 +403,8 @@ export class SsiService {
     const result = indexSecurities.flat();
 
     await this.indexSecurityModel.truncate();
+    this.logger.log('index security truncate');
+
     try {
       await this.indexSecurityModel.bulkCreate(result);
     } catch (error) {
@@ -482,6 +484,7 @@ export class SsiService {
   @Cron('0 1 * * *')
   deleteDailyOrderBook() {
     this.orderBookModel.truncate();
+
     this.logger.log(`truncate orderbook`);
   }
 }

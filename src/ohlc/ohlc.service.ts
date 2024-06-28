@@ -114,7 +114,6 @@ export class OhlcService {
         .catch((e) => {
           console.log(e);
         });
-      this.logger.log(`daily import ${symbol}`);
 
       return { data, length };
     };
@@ -127,7 +126,7 @@ export class OhlcService {
       let pageIndex = 2;
 
       while ((pageIndex - 1) * 1000 < length) {
-        await Utils.sleep(1000);
+        await Utils.sleep(1500);
         fetchData({ symbol, pageIndex, headers });
         pageIndex++;
       }
@@ -140,8 +139,10 @@ export class OhlcService {
     }): Promise<void> => {
       const data = await fetchData({ symbol, pageIndex: 1, headers });
       dataLengths[symbol] = data.length;
+      console.log(symbol);
     };
 
+    this.logger.log('update daily ohlc');
     const dataLengths = {};
     const token = this.ssiService.getToken();
     const headers = {
@@ -155,14 +156,16 @@ export class OhlcService {
     });
     if (isTruncate) {
       await this.dailyOhlcModel.truncate();
-      this.logger.log('daily ohlc truncate');
+      this.logger.log(' truncate daily ohlc');
     }
 
     for (const symbol of symbols) {
       fetchDataLength({ symbol, headers, dataLengths });
-      await Utils.sleep(1000);
-    }
+      console.log(symbol, 'hi');
 
+      await Utils.sleep(1500);
+    }
+    this.logger.log('fetch daily length');
     for (const symbol of symbols) {
       await fetchDataEachSymbol({
         symbol,
@@ -170,6 +173,7 @@ export class OhlcService {
         length: dataLengths[symbol],
       });
     }
+    this.logger.log('update daily done');
   }
 
   async importIntraday(
@@ -249,7 +253,7 @@ export class OhlcService {
       let pageIndex = 2;
 
       while ((pageIndex - 1) * 1000 < length) {
-        await Utils.sleep(1000);
+        await Utils.sleep(1500);
         fetchData({ symbol, pageIndex, headers });
         pageIndex++;
       }
@@ -284,7 +288,7 @@ export class OhlcService {
 
     for (const symbol of symbols) {
       fetchDataLength({ symbol, headers, dataLengths });
-      await Utils.sleep(1000);
+      await Utils.sleep(1500);
     }
 
     for (const symbol of symbols) {

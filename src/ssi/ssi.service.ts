@@ -468,6 +468,7 @@ export class SsiService {
 
   @Cron('0 9 * * *')
   updateDailyOhlc() {
+    this.logger.log(`update daily ohlc`);
     this.ohlcService.updateDaily(Object.values(this.bData));
     const newNuocNgoai = Object.values(this.rData).map((item: any) => {
       return {
@@ -477,14 +478,11 @@ export class SsiService {
     });
 
     this.nuocNgoaiModel.bulkCreate(newNuocNgoai, { ignoreDuplicates: true });
-
-    this.logger.log(`update daily ohlc`);
   }
 
   @Cron('0 1 * * *')
   deleteDailyOrderBook() {
-    this.orderBookModel.truncate();
-
     this.logger.log(`truncate orderbook`);
+    this.orderBookModel.truncate();
   }
 }

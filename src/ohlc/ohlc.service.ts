@@ -101,6 +101,7 @@ export class OhlcService {
                 volume: item.Volume,
               };
             });
+
             try {
               this.dailyOhlcModel.bulkCreate(formattedData, {
                 ignoreDuplicates: true,
@@ -520,8 +521,8 @@ export class OhlcService {
 
   @Cron('0 10 * * *')
   async handleCron() {
-    await this.updateRoc(false, true);
     this.logger.log(`update roc`);
+    await this.updateRoc(false, true);
 
     // Thực hiện các hành động bạn muốn ở đây
   }

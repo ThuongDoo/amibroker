@@ -67,6 +67,7 @@ export class OhlcService {
         pageSize: 1000,
         ascending: true,
       };
+
       await api
         .get(
           endpoints.DAILY_OHLC +
@@ -84,7 +85,13 @@ export class OhlcService {
         )
         .then((res) => {
           data = res.data.data;
-          if (data === null) {
+          if (data == null) {
+            console.log(
+              Utils.getCurrentTime(),
+              symbol,
+              lookupRequest.pageIndex,
+            );
+
             length = 0;
           } else {
             length = res.data.totalRecord;
@@ -126,7 +133,7 @@ export class OhlcService {
       let pageIndex = 2;
 
       while ((pageIndex - 1) * 1000 < length) {
-        await Utils.sleep(3000);
+        await Utils.sleep(1500);
         fetchData({ symbol, pageIndex, headers });
         pageIndex++;
       }
@@ -139,7 +146,6 @@ export class OhlcService {
     }): Promise<void> => {
       const data = await fetchData({ symbol, pageIndex: 1, headers });
       dataLengths[symbol] = data.length;
-      console.log(symbol);
     };
 
     this.logger.log('update daily ohlc');
@@ -161,9 +167,9 @@ export class OhlcService {
 
     for (const symbol of symbols) {
       fetchDataLength({ symbol, headers, dataLengths });
-      console.log(symbol, 'hi');
+      // console.log(symbol, 'hi');
 
-      await Utils.sleep(3000);
+      await Utils.sleep(1500);
     }
     this.logger.log('fetch daily length');
     for (const symbol of symbols) {
@@ -253,7 +259,7 @@ export class OhlcService {
       let pageIndex = 2;
 
       while ((pageIndex - 1) * 1000 < length) {
-        await Utils.sleep(3000);
+        await Utils.sleep(1500);
         fetchData({ symbol, pageIndex, headers });
         pageIndex++;
       }
@@ -288,7 +294,7 @@ export class OhlcService {
 
     for (const symbol of symbols) {
       fetchDataLength({ symbol, headers, dataLengths });
-      await Utils.sleep(3000);
+      await Utils.sleep(1500);
     }
 
     for (const symbol of symbols) {

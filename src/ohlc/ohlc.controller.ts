@@ -3,6 +3,8 @@ import { OhlcService } from './ohlc.service';
 import { SkipThrottle } from '@nestjs/throttler';
 import { format, subDays } from 'date-fns';
 import { Public } from 'src/shared/decorator/public.decorator';
+import { Roles } from 'src/shared/decorator/roles.decorator';
+import { UserRole } from 'src/user/model/user.model';
 
 @Controller('ohlc')
 export class OhlcController {
@@ -14,7 +16,7 @@ export class OhlcController {
     return await this.ohlcService.getDaily(ticker);
   }
 
-  @Public()
+  @Roles(UserRole.ADMIN)
   @Get('/daily/update')
   updateDailyOhlc() {
     this.ohlcService.importDaily();
@@ -27,7 +29,7 @@ export class OhlcController {
     return await this.ohlcService.getIntraday(ticker);
   }
 
-  @Public()
+  @Roles(UserRole.ADMIN)
   @Get('/intraday/update')
   updateIntradayOhlc() {
     const currentDate = new Date();
@@ -45,9 +47,9 @@ export class OhlcController {
     return await this.ohlcService.getRoc(startDate, endDate);
   }
 
+  @Roles(UserRole.ADMIN)
   @Get('/roc/update')
   async updateRoc() {
     return await this.ohlcService.updateRoc();
-    return { message: 'success' };
   }
 }

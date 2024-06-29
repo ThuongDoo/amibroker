@@ -54,4 +54,10 @@ export class Utils {
     const isoDate = formatISO(parsedDate, { representation: 'date' });
     return isoDate;
   }
+
+  static getCurrentTime() {
+    const now = new Date();
+    const formattedTime = format(now, 'HH:mm:ss');
+    return formattedTime;
+  }
 }

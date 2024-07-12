@@ -134,7 +134,7 @@ export class EventsGateway
 
   async sendStockUpdateSignal() {
     // this.logger.log(`Emit stock update signal`);
-    //
+
     this.server.emit('new_stock_data_available', true);
   }
 

@@ -125,11 +125,11 @@ export class EventsGateway
     this.logger.log('server init');
   }
   handleDisconnect(client: Socket) {
-    this.logger.log(`Disconnect: ${client.id}`);
+    // this.logger.log(`Disconnect: ${client.id}`);
   }
   handleConnection(client: Socket, ...args: any[]) {
     // delete
-    this.logger.log(`Client connected: ${client.id}`);
+    // this.logger.log(`Client connected: ${client.id}`);
   }
 
   async sendStockUpdateSignal() {

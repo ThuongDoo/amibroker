@@ -91,6 +91,7 @@ export class OhlcService {
               symbol,
               lookupRequest.pageIndex,
             );
+            console.log(res.data);
 
             length = 0;
           } else {

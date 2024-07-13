@@ -9,7 +9,7 @@ import { UserRequestDto } from './dto/userRequest.dto';
 import { UpdateUserDto } from './dto/updateUser.dto';
 import { UserSecurity } from './model/userSecurity.model';
 import { Security } from 'src/ssi/model/security.model';
-import { add } from 'date-fns';
+import { add, isAfter } from 'date-fns';
 
 @Injectable()
 export class UserService {
@@ -70,6 +70,20 @@ export class UserService {
     }
     await user.update({ isActive: true });
     return true;
+  }
+
+  async checkExpiration(phone: string) {
+    const currentTime = new Date();
+    const user = await this.userModel.findOne({ where: { phone: phone } });
+    if (!user) {
+      return true;
+    }
+
+    if (isAfter(currentTime, user.expirationDate)) {
+      return false;
+    } else {
+      return true;
+    }
   }
 
   async updateUser(createUserDto: UpdateUserDto) {

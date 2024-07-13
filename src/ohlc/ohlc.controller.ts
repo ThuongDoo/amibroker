@@ -1,6 +1,6 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { OhlcService } from './ohlc.service';
-import { SkipThrottle } from '@nestjs/throttler';
+// import { SkipThrottle } from '@nestjs/throttler';
 import { format, subDays } from 'date-fns';
 import { Public } from 'src/shared/decorator/public.decorator';
 import { Roles } from 'src/shared/decorator/roles.decorator';

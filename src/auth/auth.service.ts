@@ -47,6 +47,7 @@ export class AuthService {
       return false;
     }
     const isExpire = await this.userService.checkExpiration(userData.phone);
+
     if (isExpire === true) {
       return false;
     }

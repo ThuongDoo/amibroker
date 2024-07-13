@@ -80,9 +80,9 @@ export class UserService {
     }
 
     if (isAfter(currentTime, user.expirationDate)) {
-      return false;
-    } else {
       return true;
+    } else {
+      return false;
     }
   }
 

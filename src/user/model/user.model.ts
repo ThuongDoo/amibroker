@@ -43,6 +43,9 @@ export class User extends Model {
   @Column
   deviceInfo: string;
 
+  @Column({ defaultValue: false })
+  isActive: boolean;
+
   @Column({
     allowNull: true,
     type: DataType.DATE,

@@ -63,6 +63,15 @@ export class UserService {
     }
   }
 
+  async activeUser(email: string) {
+    const user = await this.userModel.findOne({ where: { email: email } });
+    if (!user) {
+      throw new BadRequestException('no user found');
+    }
+    await user.update({ isActive: true });
+    return true;
+  }
+
   async updateUser(createUserDto: UpdateUserDto) {
     const user = await this.userModel.findOne({
       where: { phone: createUserDto.phone },

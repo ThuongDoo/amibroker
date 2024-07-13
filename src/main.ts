@@ -25,7 +25,13 @@ async function bootstrap() {
   app.use(passport.session());
   app.use(helmet());
   app.enableCors({
-    origin: ['*', 'http://localhost:3001', 'http://localhost:3002'],
+    origin: [
+      // '*',
+      'http://192.168.0.118:8081',
+      'http://localhost:3001',
+      'http://42.118.137.1:3001',
+      '*',
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });

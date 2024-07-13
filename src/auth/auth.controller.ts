@@ -43,9 +43,14 @@ export class AuthController {
       createUserDto.email,
       this.secretKey,
     ).toString();
+    // const htmlContent = `<p>Dear user,</p>
+    //         <p>Please click the following link to verify your email address:</p>
+    //         <a href="http://localhost:3001/verifying?token=${token}">Verify Email</a>
+    //         <p>Thank you!</p>`;
+
     const htmlContent = `<p>Dear user,</p>
             <p>Please click the following link to verify your email address:</p>
-            <a href="http://localhost:3001/verifying?token=${token}">Verify Email</a>
+            <a href="https://chungkhoanxyz.com/verifying?token=${token}">Verify Email</a>
             <p>Thank you!</p>`;
     const subject = 'Verify your email address';
 
@@ -60,9 +65,13 @@ export class AuthController {
   @Get('/verify-change-password')
   async verifyChangePassword(@Query('email') email: string) {
     const token = CryptoJS.AES.encrypt(email, this.secretKey).toString();
+    // const htmlContent = `<p>Dear user,</p>
+    //         <p>Please click the following link to change your password:</p>
+    //         <a href="http://localhost:3001/change-password-verifying?token=${token}">Change password</a>
+    //         <p>Thank you!</p>`;
     const htmlContent = `<p>Dear user,</p>
             <p>Please click the following link to change your password:</p>
-            <a href="http://localhost:3001/change-password-verifying?token=${token}">Change password</a>
+            <a href="https://chungkhoanxyz.com/change-password-verifying?token=${token}">Change password</a>
             <p>Thank you!</p>`;
     const subject = 'Change password';
 
